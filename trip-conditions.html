@@ -43,6 +43,10 @@
   .dest b{display:block;font-size:15px}
   .dest em{font-style:normal;font-size:13px;color:var(--sub)}
   .dest-input{width:100%;border:0;outline:0;background:transparent;font-size:14px;padding:0}
+  .dest-row{display:flex;align-items:center;gap:6px}
+  .dest-x{width:22px;height:22px;flex:none;border-radius:50%;background:#d8d8d8;color:#fff;font-size:11px;display:grid;place-items:center;cursor:pointer}
+  .dest-x:hover{background:var(--teal-d)}
+  .dest-x[hidden]{display:none}
 
   /* 달력 */
   .cal-wrap{display:flex;gap:40px;justify-content:center;position:relative}
@@ -154,7 +158,7 @@
     <div class="search">
       <button class="seg" id="s-dest" type="button">
         <small>여행지</small>
-        <input class="dest-input" id="destInput" placeholder="여행지 검색" autocomplete="off">
+        <span class="dest-row"><input class="dest-input" id="destInput" placeholder="여행지 검색" autocomplete="off"><span class="dest-x" id="destClear" role="button" aria-label="여행지 선택 취소" title="선택 취소" hidden>✕</span></span>
       </button>
       <button class="seg" id="s-date" type="button"><small>날짜</small><span id="dateText">날짜 추가</span></button>
       <button class="seg" id="s-guest" type="button"><small>여행자</small><span id="guestText">게스트 추가</span></button>
@@ -347,8 +351,15 @@
   });
   $('#destList').addEventListener('click', e => {
     const b = e.target.closest('.dest'); if (!b) return;
+    // 이미 선택된 도시를 다시 누르면 선택 취소
+    if (state.dest === b.dataset.d) { e.stopPropagation(); clearDest(); return; }
     state.dest = b.dataset.d; $('#destInput').value = state.dest; renderAll(); open('date');
   });
+  function clearDest() {
+    state.dest = ''; $('#destInput').value = ''; contSel = '전체';
+    renderDest(); renderAll(); open('dest'); $('#destInput').focus();
+  }
+  $('#destClear').addEventListener('click', e => { e.stopPropagation(); clearDest(); });
 
   /* ---------- 달력 ---------- */
   const today = new Date(); today.setHours(0,0,0,0);
@@ -378,6 +389,7 @@
   $('#prevM').addEventListener('click', () => { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); renderCal(); });
   $('#nextM').addEventListener('click', () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); renderCal(); });
   $('#p-date').addEventListener('click', e => {
+    e.stopPropagation(); // 달력을 다시 그리면 클릭 대상이 DOM에서 사라져 바깥 클릭으로 오인되므로 막는다
     const b = e.target.closest('.day'); if (!b || b.disabled) return;
     const t = new Date(+b.dataset.t);
     if (!state.start || (state.start && state.end)) { state.start = t; state.end = null; }
@@ -404,6 +416,7 @@
       <button type="button" data-k="${k}" data-d="1" ${state.guests[k] >= 16 ? 'disabled' : ''}>+</button></div></div>`).join('');
   }
   $('#p-guest').addEventListener('click', e => {
+    e.stopPropagation();
     const b = e.target.closest('button[data-k]'); if (!b) return;
     const g = state.guests, k = b.dataset.k;
     g[k] = Math.max(0, g[k] + +b.dataset.d);
@@ -471,6 +484,7 @@
     const gl = guestLabel();
     $('#guestText').textContent = gl || '게스트 추가';
     $('#guestText').classList.toggle('filled', !!gl);
+    $('#destClear').hidden = !state.dest;
     renderFlight();
     renderSummary();
   }
