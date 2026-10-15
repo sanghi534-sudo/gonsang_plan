@@ -103,6 +103,25 @@
   .text:focus{outline:2px solid var(--teal);border-color:transparent}
   .range{width:100%;accent-color:var(--teal-d)}
   .range-val{font-weight:700;margin-left:6px;color:var(--ink)}
+  .ftabs{display:flex;gap:6px;margin-bottom:14px}
+  .ftab{padding:10px 20px;border-radius:999px;font-weight:700;color:#9db8af}
+  .ftab.on{background:var(--teal-soft);color:var(--teal-d)}
+  .fcard{position:relative;border:1px solid var(--line);border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.05);padding:6px 0}
+  .frow{display:flex;align-items:center;gap:18px;padding:18px 20px;margin-right:70px;border-bottom:1px solid var(--soft2);cursor:pointer;font-weight:700;font-size:17px}
+  .frow:last-child{border-bottom:0;margin-right:0}
+  .frow:hover{background:var(--soft)}
+  .frow i{font-style:normal;color:#aaa;width:22px;text-align:center}
+  .frow .ph{color:#b5b5b5;font-weight:600}
+  #fr-date,#fr-pax{margin-right:0}
+  .swap{position:absolute;right:18px;top:50px;width:56px;height:56px;border-radius:50%;border:1px solid var(--line);background:#fff;color:#999;font-size:20px}
+  .swap:hover{border-color:var(--teal-d);color:var(--teal-d)}
+  .fgo{width:100%;margin-top:16px;padding:18px;border-radius:14px;background:var(--teal-d);color:#fff;font-weight:800;font-size:17px}
+  .fgo:disabled{background:#bdbdbd;cursor:default}
+  .fhint{margin:10px 2px 0;font-size:12px;color:var(--sub)}
+  .conts{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .cont{padding:7px 14px;border-radius:999px;border:1px solid var(--line);font-size:13px;font-weight:700}
+  .cont.on{background:var(--teal-d);border-color:var(--teal-d);color:#fff}
+  .grp{margin:10px 0 4px;font-size:12px;font-weight:800;color:var(--teal-d)}
   .summary{padding-top:6px}
   .summary h3{margin:0 0 10px;font-size:15px}
   .summary dl{margin:0;display:grid;grid-template-columns:52px 1fr;gap:6px 10px;font-size:13px}
@@ -142,7 +161,7 @@
       <button class="go" id="goBtn" type="button">🔍 검색</button>
     </div>
 
-    <div class="panel" id="p-dest"><h4>추천 여행지</h4><div id="destList"></div></div>
+    <div class="panel" id="p-dest"><h4>해외 여행지 · 대륙별</h4><div class="conts" id="conts"></div><div id="destList"></div></div>
 
     <div class="panel" id="p-date">
       <div class="cal-wrap">
@@ -170,23 +189,24 @@
   <div class="panes">
 
   <div class="pane on" id="pane-air">
-    <h3>✈ 항공 조건</h3>
-    <div class="field"><label>출발 공항</label>
-      <div class="opts" data-key="airFrom" data-mode="single">
-        <button class="opt on" type="button">인천(ICN)</button><button class="opt" type="button">김포(GMP)</button><button class="opt" type="button">김해(PUS)</button><button class="opt" type="button">제주(CJU)</button>
-      </div></div>
-    <div class="field"><label>항공편 유형</label>
-      <div class="opts" data-key="airType" data-mode="single">
-        <button class="opt on" type="button">왕복</button><button class="opt" type="button">편도</button><button class="opt" type="button">다구간</button>
-      </div></div>
-    <div class="field"><label>좌석 등급</label>
+    <div class="ftabs" id="ftabs">
+      <button class="ftab on" data-v="왕복" type="button">왕복</button>
+      <button class="ftab" data-v="편도" type="button">편도</button>
+      <button class="ftab" data-v="다구간" type="button">다구간</button>
+    </div>
+    <div class="fcard">
+      <div class="frow" id="fr-from"><i>➤</i><span id="fFrom">서울 SEL</span></div>
+      <div class="frow" id="fr-to"><i>⌖</i><span id="fTo" class="ph">도착 도시</span></div>
+      <button class="swap" id="fSwap" type="button" aria-label="출발·도착 바꾸기">⇅</button>
+      <div class="frow" id="fr-date"><i>▭</i><span id="fDate" class="ph">날짜</span></div>
+      <div class="frow" id="fr-pax"><i>☺</i><span id="fPax">탑승객 1명, 일반석</span></div>
+    </div>
+    <div class="field" style="margin-top:16px"><label>좌석 등급</label>
       <div class="opts" data-key="airClass" data-mode="single">
         <button class="opt on" type="button">일반석</button><button class="opt" type="button">프리미엄 일반석</button><button class="opt" type="button">비즈니스</button>
       </div></div>
-    <div class="field"><label>선호 사항 (복수 선택)</label>
-      <div class="opts" data-key="airPref" data-mode="multi">
-        <button class="opt" type="button">직항만</button><button class="opt" type="button">수하물 포함</button><button class="opt" type="button">오전 출발</button><button class="opt" type="button">저가항공 제외</button>
-      </div></div>
+    <button class="fgo" id="fGo" type="button" disabled>항공권 검색</button>
+    <p class="fhint">도착 도시·날짜·탑승객은 상단 선택과 연동돼요. 항목을 누르면 상단 선택창이 열립니다.</p>
   </div>
 
   <div class="pane" id="pane-stay">
@@ -289,19 +309,39 @@
   document.addEventListener('click', e => { if (!$('#searchWrap').contains(e.target)) closeAll(); });
 
   /* ---------- 여행지 ---------- */
-  const DESTS = [
-    ['🗼','도쿄','멋진 건축물과 쇼핑'], ['🏯','오사카','활기찬 나이트라이프'], ['🏖','부산','해변으로 인기 있는 곳'],
-    ['🌋','제주','자연을 만끽하기 좋은 곳'], ['🏙','서울','최고급 다이닝을 즐기기 좋은 곳'], ['⛷','강릉','자연을 만끽하기 좋은 곳'],
-    ['🌸','교토','전통과 사찰'], ['🏝','후쿠오카','먹거리와 가까운 거리'], ['🌴','방콕','야시장과 사원'],
-    ['🗽','다낭','휴양과 해변'], ['🥐','파리','예술과 미식'], ['🌆','타이베이','야시장과 온천']
-  ];
+  // [아이콘, 도시, 설명, 공항코드] — 해외만, 대륙별
+  const CONTINENTS = {
+    '아시아': [['🗼','도쿄','멋진 건축물과 쇼핑','TYO'], ['🏯','오사카','활기찬 나이트라이프','OSA'], ['🌸','교토','전통과 사찰','UKY'],
+      ['🍜','후쿠오카','먹거리와 가까운 거리','FUK'], ['🌴','방콕','야시장과 사원','BKK'], ['🏖','다낭','휴양과 해변','DAD'],
+      ['🌆','타이베이','야시장과 온천','TPE'], ['🌃','싱가포르','도시 속 미식 여행','SIN'], ['🏙','홍콩','야경과 딤섬','HKG']],
+    '유럽': [['🥐','파리','예술과 미식','PAR'], ['🎡','런던','박물관과 공연','LON'], ['🍝','로마','고대 유적과 파스타','ROM'],
+      ['🏰','프라하','동화 같은 구시가지','PRG'], ['🌉','바르셀로나','건축과 해변','BCN']],
+    '북미': [['🗽','뉴욕','쇼핑과 뮤지컬','NYC'], ['🌉','샌프란시스코','금문교와 해안 드라이브','SFO'], ['🎬','로스앤젤레스','할리우드와 해변','LAX'],
+      ['🍁','밴쿠버','자연과 도시의 조화','YVR']],
+    '오세아니아': [['🎭','시드니','오페라하우스와 해변','SYD'], ['🏝','괌','가까운 휴양지','GUM'], ['🏔','퀸스타운','대자연 액티비티','ZQN']],
+    '중동·아프리카': [['🏜','두바이','초고층과 사막 투어','DXB'], ['🕌','이스탄불','동서양이 만나는 곳','IST'], ['🦁','케이프타운','자연과 와인','CPT']],
+    '중남미': [['💃','칸쿤','카리브해 리조트','CUN'], ['🗿','리마','페루 미식 여행','LIM']]
+  };
+  let contSel = '전체';
+  const ALL = Object.entries(CONTINENTS).flatMap(([c, l]) => l.map(d => ({ c, ic: d[0], n: d[1], t: d[2], code: d[3] })));
+  const codeOf = n => (ALL.find(d => d.n === n) || {}).code || '';
   function renderDest(q = '') {
-    const list = DESTS.filter(d => d[1].includes(q.trim()));
-    $('#destList').innerHTML = list.length
-      ? list.map(d => `<button class="dest" type="button" data-d="${d[1]}"><i>${d[0]}</i><span><b>${d[1]}</b><em>${d[2]}</em></span></button>`).join('')
-      : `<div style="padding:12px;color:var(--sub);font-size:14px">검색 결과가 없습니다. 직접 입력한 "${q}" 로 진행할 수 있어요.</div>`;
+    $('#conts').innerHTML = ['전체', ...Object.keys(CONTINENTS)]
+      .map(c => `<button class="cont${c === contSel ? ' on' : ''}" type="button" data-c="${c}">${c}</button>`).join('');
+    const list = ALL.filter(d => (contSel === '전체' || d.c === contSel) && d.n.includes(q.trim()));
+    let h = '', last = '';
+    list.forEach(d => {
+      if (d.c !== last) { h += `<div class="grp">${d.c}</div>`; last = d.c; }
+      h += `<button class="dest" type="button" data-d="${d.n}"><i>${d.ic}</i><span><b>${d.n} <small style="color:var(--sub);font-weight:600">${d.code}</small></b><em>${d.t}</em></span></button>`;
+    });
+    $('#destList').innerHTML = h || `<div style="padding:12px;color:var(--sub);font-size:14px">검색 결과가 없습니다. 직접 입력한 "${q}" 로 진행할 수 있어요.</div>`;
   }
   renderDest();
+  $('#conts').addEventListener('click', e => {
+    const b = e.target.closest('.cont'); if (!b) return;
+    e.stopPropagation(); // re-render가 클릭 대상을 DOM에서 지워 패널이 닫히는 것을 방지
+    contSel = b.dataset.c; renderDest($('#destInput').value);
+  });
   $('#destInput').addEventListener('input', e => {
     state.dest = e.target.value; renderDest(e.target.value); open('dest'); renderAll();
   });
@@ -389,7 +429,7 @@
       if (multi) b.classList.toggle('on');
       else $$('.opt', box).forEach(x => x.classList.toggle('on', x === b));
       state.opts[key] = $$('.opt.on', box).map(x => x.textContent);
-      renderSummary();
+      renderAll();
     });
   });
   const BUD = ['air', 'stay', 'tour', 'food'];
@@ -415,7 +455,7 @@
       ['여행지', state.dest || '미정'],
       ['날짜', state.start ? (state.end ? `${fmtLong(state.start)} ~ ${fmtLong(state.end)} (${nights()}박)` : `${fmtLong(state.start)} ~`) : '미정'],
       ['여행자', guestLabel() || '미정'],
-      ['항공', `${j(o.airFrom)} · ${j(o.airType)} · ${j(o.airClass)}` + (o.airPref.length ? ` · ${o.airPref.join(', ')}` : '')],
+      ['항공', `${air.reverse ? '귀국편 기준 · ' : ''}${air.from} · ${air.type} · ${j(o.airClass)}`],
       ['숙소', `${j(o.stayType)} · ${j(o.stayStar)}` + (o.stayPref.length ? ` · ${o.stayPref.join(', ')}` : '')],
       ['관광', `${j(o.tourTheme)} · ${j(o.tourPace)} · ${j(o.tourMove)}`],
       ['맛집', `${j(o.foodKind)} · ${j(o.foodBudget)}` + (o.foodPref.length ? ` · ${o.foodPref.join(', ')}` : '')],
@@ -431,8 +471,46 @@
     const gl = guestLabel();
     $('#guestText').textContent = gl || '게스트 추가';
     $('#guestText').classList.toggle('filled', !!gl);
+    renderFlight();
     renderSummary();
   }
+
+  /* ---------- 항공 검색 폼 (상단 선택과 연동) ---------- */
+  const air = { type: '왕복', from: '서울 SEL', reverse: false };
+  function renderFlight() {
+    const code = codeOf(state.dest);
+    const to = state.dest ? (code ? `${state.dest} ${code}` : state.dest) : '';
+    const fromEl = $('#fFrom'), toEl = $('#fTo');
+    const place = air.reverse
+      ? [[to, '도착 도시'], [air.from, '']] : [[air.from, ''], [to, '도착 도시']];
+    // 위쪽 행 = 출발, 아래 행 = 도착
+    fromEl.textContent = place[0][0] || '출발 도시'; fromEl.className = place[0][0] ? '' : 'ph';
+    toEl.textContent = place[1][0] || '도착 도시'; toEl.className = place[1][0] ? '' : 'ph';
+    const dEl = $('#fDate');
+    const d = state.start
+      ? (air.type === '편도' || !state.end ? fmt(state.start) : `${fmt(state.start)} - ${fmt(state.end)}`) : '날짜';
+    dEl.textContent = d; dEl.className = state.start ? '' : 'ph';
+    const pax = state.guests.adult + state.guests.child + state.guests.infant;
+    $('#fPax').textContent = `탑승객 ${pax || 1}명, ${(state.opts.airClass || ['일반석'])[0]}`;
+    const ok = !!state.dest && !!state.start && (air.type === '편도' || !!state.end) && state.guests.adult > 0;
+    $('#fGo').disabled = !ok;
+  }
+  $('#ftabs').addEventListener('click', e => {
+    const b = e.target.closest('.ftab'); if (!b) return;
+    air.type = b.dataset.v;
+    $$('.ftab').forEach(x => x.classList.toggle('on', x === b));
+    renderAll();
+  });
+  $('#fSwap').addEventListener('click', () => { air.reverse = !air.reverse; renderAll(); });
+  const toTop = name => { window.scrollTo({ top: 0, behavior: 'smooth' }); setTimeout(() => open(name), 50); };
+  $('#fr-from').addEventListener('click', () => {
+    const list = ['서울 SEL', '부산 PUS', '제주 CJU'];
+    air.from = list[(list.indexOf(air.from) + 1) % list.length]; renderAll();
+  });
+  $('#fr-to').addEventListener('click', e => { e.stopPropagation(); toTop('dest'); });
+  $('#fr-date').addEventListener('click', e => { e.stopPropagation(); toTop('date'); });
+  $('#fr-pax').addEventListener('click', e => { e.stopPropagation(); toTop('guest'); });
+  $('#fGo').addEventListener('click', () => toast(`${$('#fFrom').textContent} → ${$('#fTo').textContent} 항공권 조건이 설정됐어요`));
 
   /* ---------- 검색 / 저장 ---------- */
   const toast = msg => {
@@ -449,7 +527,7 @@
   });
   $('#saveBtn').addEventListener('click', () => {
     const data = { dest: state.dest, start: state.start && state.start.toISOString().slice(0, 10),
-      end: state.end && state.end.toISOString().slice(0, 10), guests: state.guests, budget: state.budget, options: state.opts };
+      end: state.end && state.end.toISOString().slice(0, 10), guests: state.guests, flight: air, budget: state.budget, options: state.opts };
     try { localStorage.setItem('gonsang-trip-conditions', JSON.stringify(data)); } catch (_) {}
     console.log('trip conditions', data);
     toast('여행 조건을 저장했어요');
