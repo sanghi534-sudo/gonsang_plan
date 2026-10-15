@@ -299,19 +299,88 @@
   </div>
 
   <div class="pane" id="pane-stay">
+    <!-- 숙소 탭: 스타일은 이 블록에, 동작은 stay.js 에 모아 둠 (다른 탭 작업과 충돌 방지) -->
+    <style>
+      #pane-stay .st-sec{padding:20px 0;border-bottom:1px solid var(--soft2)}
+      #pane-stay .st-sec:first-of-type{padding-top:4px}
+      #pane-stay .st-sec:last-of-type{border-bottom:0}
+      #pane-stay .st-sec h4{margin:0 0 4px;font-size:17px}
+      #pane-stay .st-sub{margin:0 0 14px;font-size:13px;color:var(--sub)}
+      #pane-stay .st-seg{display:flex;border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
+      #pane-stay .st-seg .opt{flex:1;border:0;border-radius:10px;padding:12px 0}
+      #pane-stay .st-seg .opt.on{background:var(--teal-d);color:#fff}
+      #pane-stay .st-price{display:flex;gap:12px;margin-top:6px}
+      #pane-stay .st-price label{flex:1;font-size:12px;color:var(--sub);font-weight:600}
+      #pane-stay .st-price input{display:block;width:100%;margin-top:4px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;font:inherit;font-size:15px;font-weight:700;color:var(--ink)}
+      #pane-stay .st-price input:focus{outline:2px solid var(--teal);border-color:transparent}
+      #pane-stay .st-dual{position:relative;height:34px;margin:4px 8px 0}
+      #pane-stay .st-dual::before{content:"";position:absolute;left:0;right:0;top:15px;height:4px;border-radius:4px;background:var(--soft2)}
+      #pane-stay .st-fill{position:absolute;top:15px;height:4px;border-radius:4px;background:var(--teal-d)}
+      #pane-stay .st-dual input{position:absolute;left:-8px;width:calc(100% + 16px);top:0;height:34px;margin:0;background:none;pointer-events:none;-webkit-appearance:none;appearance:none}
+      #pane-stay .st-dual input::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:auto;width:26px;height:26px;border-radius:50%;background:#fff;border:1px solid #b0b0b0;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer}
+      #pane-stay .st-dual input::-moz-range-thumb{pointer-events:auto;width:24px;height:24px;border-radius:50%;background:#fff;border:1px solid #b0b0b0;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer}
+      #pane-stay .st-dual input::-webkit-slider-runnable-track{background:none}
+      #pane-stay .st-dual input::-moz-range-track{background:none}
+      #pane-stay .st-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0}
+      #pane-stay .st-row b{font-size:16px;font-weight:600}
+      #pane-stay .st-step{display:flex;align-items:center;gap:14px}
+      #pane-stay .st-step button{width:34px;height:34px;border-radius:50%;border:1px solid #b0b0b0;font-size:18px;line-height:1}
+      #pane-stay .st-step button:hover:not(:disabled){border-color:var(--ink)}
+      #pane-stay .st-step button:disabled{opacity:.3;cursor:default}
+      #pane-stay .st-step span{min-width:62px;text-align:center;font-weight:600;font-size:15px}
+      #pane-stay .st-more{margin-top:12px;font-weight:700;text-decoration:underline;font-size:14px}
+      #pane-stay .st-extra[hidden]{display:none}
+      #pane-stay .st-reset{margin-top:6px;font-size:13px;font-weight:700;text-decoration:underline;color:var(--sub)}
+    </style>
     <h3>🏨 숙소 조건</h3>
-    <div class="field"><label>숙소 유형 (복수 선택)</label>
-      <div class="opts" data-key="stayType" data-mode="multi">
-        <button class="opt on" type="button">호텔</button><button class="opt" type="button">리조트</button><button class="opt" type="button">게스트하우스</button><button class="opt" type="button">에어비앤비</button><button class="opt" type="button">료칸·한옥</button>
-      </div></div>
-    <div class="field"><label>최소 성급</label>
-      <div class="opts" data-key="stayStar" data-mode="single">
-        <button class="opt on" type="button">상관없음</button><button class="opt" type="button">3성 이상</button><button class="opt" type="button">4성 이상</button><button class="opt" type="button">5성</button>
-      </div></div>
-    <div class="field"><label>중요한 점 (복수 선택)</label>
-      <div class="opts" data-key="stayPref" data-mode="multi">
-        <button class="opt" type="button">역세권</button><button class="opt" type="button">조식 포함</button><button class="opt" type="button">수영장</button><button class="opt" type="button">조용한 곳</button>
-      </div></div>
+
+    <section class="st-sec">
+      <h4>숙소 유형</h4>
+      <div class="opts st-seg" data-key="stayType" data-mode="single">
+        <button class="opt on" type="button">모든 유형</button><button class="opt" type="button">방</button><button class="opt" type="button">집 전체</button>
+      </div>
+    </section>
+
+    <section class="st-sec">
+      <h4>가격 범위</h4>
+      <p class="st-sub">1박 요금 기준 · 모든 수수료 포함 (원화)</p>
+      <div class="st-dual">
+        <div class="st-fill" id="stFill"></div>
+        <input type="range" id="stMin" min="0" max="2600000" step="10000" value="0" aria-label="최저 가격">
+        <input type="range" id="stMax" min="0" max="2600000" step="10000" value="2600000" aria-label="최고 가격">
+      </div>
+      <div class="st-price">
+        <label>최저<input id="stMinTxt" inputmode="numeric" autocomplete="off"></label>
+        <label>최고<input id="stMaxTxt" inputmode="numeric" autocomplete="off"></label>
+      </div>
+    </section>
+
+    <section class="st-sec">
+      <h4>침실과 침대</h4>
+      <div class="st-row"><b>침실</b><div class="st-step" data-st="bedrooms"><button type="button" data-d="-1">−</button><span></span><button type="button" data-d="1">+</button></div></div>
+      <div class="st-row"><b>침대</b><div class="st-step" data-st="beds"><button type="button" data-d="-1">−</button><span></span><button type="button" data-d="1">+</button></div></div>
+      <div class="st-row"><b>욕실</b><div class="st-step" data-st="baths"><button type="button" data-d="-1">−</button><span></span><button type="button" data-d="1">+</button></div></div>
+    </section>
+
+    <section class="st-sec">
+      <h4>편의시설</h4>
+      <div class="opts" data-key="stayAmenity" data-mode="multi" style="margin-top:12px">
+        <button class="opt" type="button">🏊 수영장</button><button class="opt" type="button">🧺 세탁기</button><button class="opt" type="button">📶 와이파이</button><button class="opt" type="button">❄ 에어컨</button><button class="opt" type="button">🛁 대형 욕조</button>
+      </div>
+      <div class="opts st-extra" id="stExtra" data-key="stayAmenityMore" data-mode="multi" style="margin-top:8px" hidden>
+        <button class="opt" type="button">🍳 주방</button><button class="opt" type="button">🅿 주차</button><button class="opt" type="button">🏋 헬스장</button><button class="opt" type="button">📺 TV</button><button class="opt" type="button">☕ 조식 제공</button><button class="opt" type="button">🔥 바비큐</button><button class="opt" type="button">👕 건조기</button><button class="opt" type="button">💻 업무 전용 공간</button>
+      </div>
+      <button class="st-more" id="stMore" type="button">더 표시 ⌄</button>
+    </section>
+
+    <section class="st-sec">
+      <h4>건물 유형</h4>
+      <div class="opts" data-key="stayBuilding" data-mode="multi" style="margin-top:12px">
+        <button class="opt" type="button">🏠 단독 또는 다세대 주택</button><button class="opt" type="button">🏢 아파트</button><button class="opt" type="button">🏡 게스트용 별채</button><button class="opt" type="button">🏨 호텔</button><button class="opt" type="button">🏖 펜션</button>
+      </div>
+    </section>
+
+    <button class="st-reset" id="stReset" type="button">숙소 조건 전체 삭제</button>
   </div>
 
   <div class="pane" id="pane-tour">
@@ -633,6 +702,7 @@
 })();
 </script>
 <!-- FLIGHT DEMO CONTROLLER END -->
+<script src="stay.js"></script>
 <script>
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
@@ -797,6 +867,7 @@
   });
   // 예산은 budget.js(TripBudget)가 관리한다. 금액이 바뀌면 요약만 갱신.
   document.addEventListener('tripbudget:change', () => renderSummary());
+  document.addEventListener('tripstay:change', () => renderSummary());
   $('#tabs').addEventListener('click', e => {
     const t = e.target.closest('.tab'); if (!t) return;
     $$('.tab').forEach(x => x.classList.toggle('on', x === t));
@@ -811,7 +882,7 @@
       ['날짜', state.start ? (state.end ? `${fmtLong(state.start)} ~ ${fmtLong(state.end)} (${nights()}박)` : `${fmtLong(state.start)} ~`) : '미정'],
       ['여행자', guestLabel() || '미정'],
       ['항공', `${air.reverse ? '귀국편 기준 · ' : ''}${air.from} · ${air.type} · ${j(o.airClass)}`],
-      ['숙소', `${j(o.stayType)} · ${j(o.stayStar)}` + (o.stayPref.length ? ` · ${o.stayPref.join(', ')}` : '')],
+      ['숙소', window.StayFilter ? window.StayFilter.summaryText() : '상관없음'],
       ['관광', `${j(o.tourTheme)} · ${j(o.tourPace)} · ${j(o.tourMove)}`],
       ['맛집', `${j(o.foodKind)} · ${j(o.foodBudget)}` + (o.foodPref.length ? ` · ${o.foodPref.join(', ')}` : '')],
       ['예산', window.TripBudget ? window.TripBudget.summaryText() : '미정']
@@ -909,7 +980,7 @@
   });
   $('#saveBtn').addEventListener('click', () => {
     const data = { dest: state.dest, start: state.start && state.start.toISOString().slice(0, 10),
-      end: state.end && state.end.toISOString().slice(0, 10), guests: state.guests, flight: air, budget: window.TripBudget ? window.TripBudget.get() : null, options: state.opts };
+      end: state.end && state.end.toISOString().slice(0, 10), guests: state.guests, flight: air, budget: window.TripBudget ? window.TripBudget.get() : null, stay: window.StayFilter ? window.StayFilter.get() : null, options: state.opts };
     try { localStorage.setItem('gonsang-trip-conditions', JSON.stringify(data)); } catch (_) {}
     console.log('trip conditions', data);
     toast('여행 조건을 저장했어요');
