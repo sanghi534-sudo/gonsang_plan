@@ -125,8 +125,8 @@
 
   const style = document.createElement('style');
   style.textContent = `
-    .sr{margin-top:28px;padding-top:6px;border-top:2px solid #e6e9e7;background:#fff;display:flex;flex-direction:column}
-    .sr[hidden]{display:none}
+    .sr{grid-column:1/-1;margin:28px 8px 0;padding-top:6px;border-top:2px solid #e6e9e7;background:#fff;display:flex;flex-direction:column}
+    .sr[hidden],.sr.sr-off{display:none}
     .sr-bar{display:flex;align-items:center;gap:16px;padding:12px 0;flex:none}
     .sr-back{padding:9px 14px;border-radius:999px;border:1px solid #ccc;font-weight:700;font-size:14px;background:#fff;cursor:pointer}
     .sr-back:hover{background:#f4f4f4}
@@ -135,7 +135,7 @@
     .sr-tog{margin-left:auto;display:none;border:1px solid #ccc;border-radius:999px;overflow:hidden}
     .sr-tog button{padding:8px 14px;font-size:13px;font-weight:700;border:0;background:#fff;cursor:pointer}
     .sr-tog button.on{background:#1d735a;color:#fff}
-    .sr-body{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;height:680px}
+    .sr-body{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px;height:max(680px,calc(100vh - 120px))}
     .sr-list{overflow:auto;padding:4px 6px 20px 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:22px 18px;align-content:start}
     .sr-map{position:relative;min-height:0;background:#e9ecea;border-radius:16px;overflow:hidden}
     #srMapEl{position:absolute;inset:0}
@@ -183,7 +183,11 @@
         <section class="sr-list" id="srList"></section>
         <div class="sr-map"><div id="srMapEl"></div></div>
       </div>`;
-    pane.appendChild(overlay);   // 항공 탭처럼 현재 화면의 숙소 탭 하단에 표시
+    // 하단 영역(.plan) 전체 폭을 쓰도록 본문/예산 패널 아래 한 줄로 붙인다. 숙소 탭이 아닐 땐 숨긴다.
+    (document.querySelector('.plan') || pane).appendChild(overlay);
+    const syncTab = () => overlay.classList.toggle('sr-off', !pane.classList.contains('on'));
+    new MutationObserver(syncTab).observe(pane, { attributes: true, attributeFilter: ['class'] });
+    syncTab();
     overlay.querySelector('#srBack').addEventListener('click', closeResults);
     overlay.querySelector('#srTog').addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
