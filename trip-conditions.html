@@ -330,7 +330,12 @@
       #pane-stay .st-step span{min-width:62px;text-align:center;font-weight:600;font-size:15px}
       #pane-stay .st-more{margin-top:12px;font-weight:700;text-decoration:underline;font-size:14px}
       #pane-stay .st-extra[hidden]{display:none}
-      #pane-stay .st-reset{margin-top:6px;font-size:13px;font-weight:700;text-decoration:underline;color:var(--sub)}
+      #pane-stay .st-actions{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:12px}
+      #pane-stay .st-reset{font-size:13px;font-weight:700;text-decoration:underline;color:var(--sub)}
+      #pane-stay .st-search{padding:14px 28px;border-radius:14px;background:var(--teal-d);color:#fff;font-weight:800;font-size:16px}
+      #pane-stay .st-search:hover{background:var(--pink2)}
+      #pane-stay .st-search:disabled{background:#bdbdbd;cursor:default}
+      #pane-stay .st-msg{margin:12px 0 0;font-size:13px;color:#b3541e}
     </style>
     <h3>🏨 숙소 조건</h3>
 
@@ -380,7 +385,11 @@
       </div>
     </section>
 
-    <button class="st-reset" id="stReset" type="button">숙소 조건 전체 삭제</button>
+    <div class="st-actions">
+      <button class="st-reset" id="stReset" type="button">숙소 조건 전체 삭제</button>
+      <button class="st-search" id="stSearch" type="button">🔍 숙소 검색</button>
+    </div>
+    <p class="st-msg" id="stMsg" role="status" hidden></p>
   </div>
 
   <div class="pane" id="pane-tour">
@@ -978,6 +987,13 @@
     document.querySelector('.plan').scrollIntoView({ behavior: 'smooth' });
     toast('상단 조건이 적용됐어요. 하단에서 세부 조건을 설정하세요');
   });
+  // 숙소 검색(stay.js)이 상단 선택값을 읽어 가는 통로
+  window.TripContext = () => ({
+    dest: state.dest,
+    start: state.start && ymd(state.start), end: state.end && ymd(state.end),
+    guests: { ...state.guests }
+  });
+  const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   $('#saveBtn').addEventListener('click', () => {
     const data = { dest: state.dest, start: state.start && state.start.toISOString().slice(0, 10),
       end: state.end && state.end.toISOString().slice(0, 10), guests: state.guests, flight: air, budget: window.TripBudget ? window.TripBudget.get() : null, stay: window.StayFilter ? window.StayFilter.get() : null, options: state.opts };

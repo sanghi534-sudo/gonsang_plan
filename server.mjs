@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { searchStays, validateQuery } from './stay-search.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 3000);
@@ -97,9 +98,53 @@ async function searchFlights(url, res) {
   }
 }
 
+// 숙소 검색(stay-search.mjs)과 여행 조건 페이지 정적 파일
+const STATIC = {
+  '/trip-conditions.html': ['trip-conditions.html', 'text/html; charset=utf-8'],
+  '/budget.js': ['budget.js', 'text/javascript; charset=utf-8'],
+  '/stay.js': ['stay.js', 'text/javascript; charset=utf-8'],
+};
+
+async function readJsonBody(req, limit = 20000) {
+  let size = 0;
+  const chunks = [];
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > limit) throw Object.assign(new Error('요청이 너무 큽니다.'), { status: 413 });
+    chunks.push(chunk);
+  }
+  try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw Object.assign(new Error('JSON 형식이 올바르지 않습니다.'), { status: 400 }); }
+}
+
+async function handleStays(req, res) {
+  try {
+    const host = String(req.headers.host || '');
+    if (!/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host) || (req.headers.origin && new URL(req.headers.origin).host !== host)) {
+      return sendJson(res, 403, { error: '로컬 페이지에서만 사용할 수 있습니다.' });
+    }
+    const query = await readJsonBody(req);
+    const problem = validateQuery(query);
+    if (problem) return sendJson(res, 400, { error: problem });
+    return sendJson(res, 200, await searchStays(query));
+  } catch (error) {
+    const status = error.status && error.status >= 400 && error.status < 600 ? error.status : 502;
+    return sendJson(res, status, { error: error.message || '숙소 검색에 실패했습니다.' });
+  }
+}
+
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   if (req.method === 'GET' && url.pathname === '/api/flights') return searchFlights(url, res);
+  if (req.method === 'POST' && url.pathname === '/api/stays') return handleStays(req, res);
+  if (req.method === 'GET' && STATIC[url.pathname]) {
+    const [file, type] = STATIC[url.pathname];
+    try {
+      res.writeHead(200, { 'content-type': type, 'cache-control': 'no-store' });
+      return res.end(await readFile(path.join(root, file)));
+    } catch {
+      return sendJson(res, 500, { error: '화면 파일을 읽을 수 없습니다.' });
+    }
+  }
   if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/index.html')) {
     try {
       const html = await readFile(path.join(root, 'index.html'));

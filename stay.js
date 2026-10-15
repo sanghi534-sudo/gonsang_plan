@@ -100,5 +100,225 @@
   window.StayFilter = api;
   $('#stReset').addEventListener('click', () => api.reset());
 
+  /* ---------- 숙소 검색 결과 화면 (카드 목록 + 지도) ---------- */
+  const LEAFLET = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/';
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const ICON = { 호텔: '🏨', 아파트: '🏢', 펜션: '🏖', '게스트용 별채': '🏡', '단독 주택': '🏠', 리조트: '🌴' };
+  const iconOf = t => ICON[Object.keys(ICON).find(k => (t || '').includes(k))] || '🛏';
+  const nightsOf = c => (c.start && c.end ? Math.max(1, Math.round((new Date(c.end) - new Date(c.start)) / 864e5)) : 0);
+
+  let overlay, map, layer, markers = {}, leafletReady;
+  function loadLeaflet() {
+    if (window.L) return Promise.resolve();
+    if (leafletReady) return leafletReady;
+    leafletReady = new Promise((resolve, reject) => {
+      const css = document.createElement('link');
+      css.rel = 'stylesheet'; css.href = LEAFLET + 'leaflet.min.css';
+      document.head.appendChild(css);
+      const js = document.createElement('script');
+      js.src = LEAFLET + 'leaflet.min.js';
+      js.onload = resolve; js.onerror = () => { leafletReady = null; reject(new Error('지도 라이브러리를 불러오지 못했어요.')); };
+      document.head.appendChild(js);
+    });
+    return leafletReady;
+  }
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .sr{position:fixed;inset:0;z-index:100;background:#fff;display:flex;flex-direction:column}
+    .sr[hidden]{display:none}
+    .sr-bar{display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid #ddd;flex:none}
+    .sr-back{padding:9px 14px;border-radius:999px;border:1px solid #ccc;font-weight:700;font-size:14px;background:#fff;cursor:pointer}
+    .sr-back:hover{background:#f4f4f4}
+    .sr-title{font-size:17px;font-weight:800}
+    .sr-note{display:block;font-size:12px;color:#717171;margin-top:2px}
+    .sr-tog{margin-left:auto;display:none;border:1px solid #ccc;border-radius:999px;overflow:hidden}
+    .sr-tog button{padding:8px 14px;font-size:13px;font-weight:700;border:0;background:#fff;cursor:pointer}
+    .sr-tog button.on{background:#1d735a;color:#fff}
+    .sr-body{flex:1;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);min-height:0}
+    .sr-list{overflow:auto;padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:22px 18px;align-content:start}
+    .sr-map{position:relative;min-height:0;background:#e9ecea}
+    #srMapEl{position:absolute;inset:0}
+    .sr-state{grid-column:1/-1;padding:60px 10px;text-align:center;color:#555;font-size:15px;line-height:1.7}
+    .sr-spin{width:34px;height:34px;margin:0 auto 14px;border:4px solid #dfe5e2;border-top-color:#1d735a;border-radius:50%;animation:srspin 1s linear infinite}
+    @keyframes srspin{to{transform:rotate(360deg)}}
+    .sr-card{cursor:pointer;border-radius:16px;transition:box-shadow .15s}
+    .sr-card.hl{box-shadow:0 0 0 3px #1d735a}
+    .sr-photo{position:relative;aspect-ratio:4/3;border-radius:16px;display:grid;place-items:center;font-size:44px;background:linear-gradient(135deg,#e4f3ed,#d9f17c55)}
+    .sr-badge{position:absolute;left:10px;top:10px;background:#fff;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+    .sr-heart{position:absolute;right:10px;top:8px;font-size:22px;color:#fff;text-shadow:0 0 3px #0008;background:none;border:0;cursor:pointer}
+    .sr-heart.on{color:#e0245e}
+    .sr-row{display:flex;justify-content:space-between;gap:8px;margin-top:10px;font-size:14px}
+    .sr-row b{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .sr-row span{white-space:nowrap}
+    .sr-sub{font-size:13px;color:#717171;margin-top:2px}
+    .sr-price{margin-top:6px;font-size:14px}
+    .sr-price u{font-weight:700}
+    .sr-tag{display:inline-block;margin-top:6px;font-size:11px;color:#555;background:#f2f2f2;border-radius:4px;padding:2px 6px}
+    .sr-link{display:inline-block;margin-top:6px;font-size:12px;color:#1d735a;font-weight:700}
+    .sr-pin{background:#fff;border:1px solid #bbb;border-radius:999px;padding:5px 9px;font:700 12px/1 -apple-system,"Segoe UI","Malgun Gothic",sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.25);white-space:nowrap;color:#222;transform:translate(-50%,-50%)}
+    .sr-pin.on{background:#1d735a;color:#fff;border-color:#1d735a;z-index:1000!important}
+    .leaflet-div-icon.sr-ico{background:none;border:0}
+    @media (max-width:900px){
+      .sr-tog{display:flex}
+      .sr-body{grid-template-columns:1fr}
+      .sr-body[data-v="list"] .sr-map{display:none}
+      .sr-body[data-v="map"] .sr-list{display:none}
+    }
+  `;
+  document.head.appendChild(style);
+
+  function ensureOverlay() {
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.className = 'sr'; overlay.hidden = true;
+    overlay.setAttribute('role', 'dialog'); overlay.setAttribute('aria-label', '숙소 검색 결과');
+    overlay.innerHTML = `
+      <header class="sr-bar">
+        <button class="sr-back" type="button" id="srBack">← 조건 수정</button>
+        <div><div class="sr-title" id="srTitle"></div><span class="sr-note" id="srNote"></span></div>
+        <div class="sr-tog" id="srTog"><button type="button" data-v="list" class="on">목록</button><button type="button" data-v="map">지도</button></div>
+      </header>
+      <div class="sr-body" id="srBody" data-v="list">
+        <section class="sr-list" id="srList"></section>
+        <div class="sr-map"><div id="srMapEl"></div></div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#srBack').addEventListener('click', closeResults);
+    overlay.querySelector('#srTog').addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      overlay.querySelectorAll('#srTog button').forEach(x => x.classList.toggle('on', x === b));
+      overlay.querySelector('#srBody').dataset.v = b.dataset.v;
+      if (map) setTimeout(() => map.invalidateSize(), 50);
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !overlay.hidden) closeResults(); });
+    return overlay;
+  }
+  function openResults() { ensureOverlay().hidden = false; document.body.style.overflow = 'hidden'; }
+  function closeResults() { overlay.hidden = true; document.body.style.overflow = ''; }
+  const $o = s => overlay.querySelector(s);
+
+  function showState(html) { $o('#srList').innerHTML = `<div class="sr-state">${html}</div>`; }
+
+  function priceText(s, nights) {
+    if (s.priceKRW == null) return '<span class="sr-sub">가격 정보 없음</span>';
+    const night = '₩' + Math.round(s.priceKRW).toLocaleString('ko-KR');
+    if (!nights) return `<u>${night}</u> <span class="sr-sub">/ 1박</span>`;
+    return `<u>총액 ₩${Math.round(s.priceKRW * nights).toLocaleString('ko-KR')}</u> <span class="sr-sub">(${night} × ${nights}박)</span>`;
+  }
+  function cardHTML(s, nights) {
+    const spec = [s.bedrooms != null && `침실 ${s.bedrooms}개`, s.beds != null && `침대 ${s.beds}개`, s.baths != null && `욕실 ${s.baths}개`].filter(Boolean).join(' · ');
+    const rating = s.rating != null ? `★ ${s.rating.toFixed(2).replace(/0$/, '')}${s.reviews != null ? ` (${s.reviews.toLocaleString('ko-KR')})` : ''}` : '';
+    return `<article class="sr-card" data-id="${s.id}">
+      <div class="sr-photo">${iconOf(s.type)}<span class="sr-badge">${s.lat == null ? '위치 미확인' : esc(s.type || '숙소')}</span><button class="sr-heart" type="button" aria-label="저장">♥</button></div>
+      <div class="sr-row"><b>${esc(s.name)}</b><span>${rating}</span></div>
+      ${s.area ? `<div class="sr-sub">${esc(s.area)}</div>` : ''}
+      ${s.highlight ? `<div class="sr-sub">${esc(s.highlight)}</div>` : ''}
+      ${spec ? `<div class="sr-sub">${spec}</div>` : ''}
+      <div class="sr-price">${priceText(s, nights)}</div>
+      ${s.freeCancel ? '<span class="sr-tag">취소 수수료 없음</span>' : ''}
+      ${s.url ? `<div><a class="sr-link" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">출처 보기 ↗</a></div>` : ''}
+    </article>`;
+  }
+
+  function renderMap(data) {
+    const el = $o('#srMapEl');
+    if (!window.L) { el.innerHTML = '<div class="sr-state">지도를 불러오지 못했어요.</div>'; return; }
+    if (!map) {
+      map = L.map(el, { zoomControl: true, scrollWheelZoom: true });
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+      }).addTo(map);
+      layer = L.layerGroup().addTo(map);
+    }
+    layer.clearLayers(); markers = {};
+    const pts = [];
+    data.stays.forEach(s => {
+      if (s.lat == null || s.lng == null) return;
+      const label = s.priceKRW != null ? '₩' + Math.round(s.priceKRW).toLocaleString('ko-KR') : esc(s.name).slice(0, 10);
+      const m = L.marker([s.lat, s.lng], {
+        icon: L.divIcon({ className: 'leaflet-div-icon sr-ico', html: `<div class="sr-pin" data-id="${s.id}">${label}</div>`, iconSize: [0, 0] })
+      }).addTo(layer);
+      m.bindTooltip(esc(s.name), { direction: 'top', offset: [0, -14] });
+      m.on('click', () => focusCard(s.id, true));
+      markers[s.id] = m; pts.push([s.lat, s.lng]);
+    });
+    setTimeout(() => {
+      map.invalidateSize();
+      if (pts.length) map.fitBounds(pts, { padding: [50, 50], maxZoom: 15 });
+      else if (data.center) map.setView([data.center.lat, data.center.lng], 11);
+      else map.setView([20, 0], 2);
+    }, 60);
+  }
+
+  function setActive(id, on) {
+    const card = $o(`.sr-card[data-id="${id}"]`); if (card) card.classList.toggle('hl', on);
+    const pin = overlay.querySelector(`.sr-pin[data-id="${id}"]`); if (pin) pin.classList.toggle('on', on);
+  }
+  function focusCard(id, scroll) {
+    overlay.querySelectorAll('.sr-card.hl').forEach(c => setActive(c.dataset.id, false));
+    setActive(id, true);
+    const card = $o(`.sr-card[data-id="${id}"]`);
+    if (scroll && card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function renderResults(data, ctx) {
+    const nights = nightsOf(ctx);
+    $o('#srTitle').textContent = data.stays.length ? `${ctx.dest} 숙소 ${data.stays.length}개` : `${ctx.dest} 숙소를 찾지 못했어요`;
+    $o('#srNote').textContent = (data.source === 'sample' ? '샘플 데이터 · ' : 'AI 웹 검색 · ') + (data.note || '');
+    if (!data.stays.length) { showState('조건에 맞는 숙소를 찾지 못했어요.<br>가격 범위나 편의시설 조건을 줄여서 다시 검색해 보세요.'); renderMap(data); return; }
+    $o('#srList').innerHTML = data.stays.map(s => cardHTML(s, nights)).join('');
+    renderMap(data);
+  }
+
+  async function runSearch() {
+    const msg = $('#stMsg'), btn = $('#stSearch');
+    const say = t => { msg.textContent = t; msg.hidden = !t; };
+    say('');
+    const ctx = window.TripContext ? window.TripContext() : null;
+    if (!ctx || !ctx.dest) { say('상단에서 여행지를 먼저 선택해 주세요.'); return; }
+    if (location.protocol === 'file:') {
+      say('숙소 검색은 로컬 서버가 필요해요. 터미널에서 npm start 실행 후 http://localhost:3000/trip-conditions.html 로 열어 주세요.');
+      return;
+    }
+    const query = { dest: ctx.dest, start: ctx.start, end: ctx.end, guests: ctx.guests, filters: api.get() };
+    btn.disabled = true; openResults();
+    $o('#srTitle').textContent = `${ctx.dest} 숙소 검색 중…`; $o('#srNote').textContent = '';
+    showState('<div class="sr-spin"></div>AI가 웹에서 숙소를 찾고 있어요.<br>보통 30초~1분 정도 걸립니다.');
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 170000);
+    try {
+      await loadLeaflet().catch(() => {});      // 지도 실패해도 목록은 보여 준다
+      const res = await fetch('/api/stays', {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(query), signal: ctl.signal
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || `검색에 실패했어요 (${res.status})`);
+      renderResults(data, ctx);
+    } catch (err) {
+      $o('#srTitle').textContent = '숙소 검색에 실패했어요';
+      showState(esc(err.name === 'AbortError' ? '응답 시간이 초과됐어요. 잠시 후 다시 시도해 주세요.' : err.message));
+    } finally {
+      clearTimeout(timer); btn.disabled = false;
+    }
+  }
+  $('#stSearch').addEventListener('click', runSearch);
+
+  // 카드 <-> 지도 핀 연동 (오버레이는 body 아래에 있으므로 document 에서 위임)
+  document.addEventListener('mouseover', e => {
+    const c = e.target.closest && e.target.closest('.sr-card'); if (c) setActive(c.dataset.id, true);
+  });
+  document.addEventListener('mouseout', e => {
+    const c = e.target.closest && e.target.closest('.sr-card'); if (c) setActive(c.dataset.id, false);
+  });
+  document.addEventListener('click', e => {
+    const heart = e.target.closest && e.target.closest('.sr-heart');
+    if (heart) { e.stopPropagation(); heart.classList.toggle('on'); return; }
+    const c = e.target.closest && e.target.closest('.sr-card');
+    if (c && markers[c.dataset.id] && map) {
+      const m = markers[c.dataset.id];
+      map.setView(m.getLatLng(), Math.max(map.getZoom(), 14), { animate: true });
+    }
+  });
+
   drawPrice(); drawSteppers();
 })();
