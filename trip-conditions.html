@@ -78,15 +78,16 @@
   .step span{width:20px;text-align:center}
 
   /* ===== 하단: 트리플 스타일 ===== */
-  .plan{max-width:1100px;margin:28px auto 80px;padding:0 16px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}
-  .main-col{min-width:0}
-  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
-  .tab{padding:22px 0;border-radius:20px;border:1px solid var(--line);background:#fff;font-weight:800;font-size:20px;display:flex;flex-direction:column;align-items:center;gap:6px}
-  .tab i{font-style:normal;font-size:30px}
-  .tab:hover{border-color:var(--teal-d)}
-  .tab.on{background:var(--teal-d);border-color:var(--teal-d);color:#fff;box-shadow:0 8px 20px rgba(29,115,90,.25)}
-  .panes{border:1px solid var(--line);border-radius:20px;background:#fff}
-  .aside{position:sticky;top:16px;background:var(--gray);border-radius:20px;padding:24px 22px 26px}
+  /* 하단 영역: 탭 바는 화면 끝에서 끝까지, 본문(조회 결과)은 넓게 + 오른쪽 예산 */
+  .plan{margin:0 0 80px;padding:0;display:grid;grid-template-columns:minmax(16px,1fr) minmax(0,1060px) 340px minmax(16px,1fr);align-items:start}
+  .main-col{display:contents}
+  .tabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);background:var(--teal-d);margin-bottom:24px}
+  .tab{padding:18px 0 16px;background:none;border:0;border-bottom:4px solid transparent;color:rgba(255,255,255,.72);font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;gap:10px}
+  .tab i{font-style:normal;font-size:22px}
+  .tab:hover{color:#fff;background:rgba(255,255,255,.08)}
+  .tab.on{color:#fff;border-bottom-color:#fff}
+  .panes{grid-column:2;border:1px solid var(--line);border-radius:20px;background:#fff}
+  .aside{grid-column:3;margin-left:24px;position:sticky;top:16px;background:var(--gray);border-radius:20px;padding:24px 22px 26px}
   .pane{display:none;padding:22px 24px 28px}
   .pane.on{display:block}
   .pane h3{margin:0 0 16px;font-size:17px}
@@ -225,9 +226,14 @@
     .panel{position:static;transform:none!important;width:auto!important;margin-top:10px;max-height:none!important}
     .cal-wrap{flex-direction:column;gap:20px}
     .cal:nth-child(3){display:none}
-    .plan{grid-template-columns:1fr}
-    .aside{position:static}
-    .tab{font-size:15px;padding:16px 0}
+    .plan{grid-template-columns:16px minmax(0,1fr) 16px}
+    .aside{grid-column:2;margin:20px 0 0;position:static}
+    .tab{font-size:15px;padding:14px 0 12px;gap:6px}
+    .tab i{font-size:18px}
+  }
+  /* 항공 조회 결과가 작게 보이는 문제: 데스크톱에서 항공 데모 영역을 확대 (데모 CSS 는 건드리지 않음) */
+  @media (min-width:900px){
+    #flight-demo-root{zoom:1.2}
   }
 </style>
 </head>
