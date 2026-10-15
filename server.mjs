@@ -54,6 +54,8 @@ async function searchFlights(url, res) {
   const origin = (params.originLocationCode || '').toUpperCase();
   const destination = (params.destinationLocationCode || '').toUpperCase();
   const adults = Number(params.adults);
+  const children = Number(params.children || 0);
+  const infants = Number(params.infants || 0);
   if (!/^[A-Z]{3}$/.test(origin) || !/^[A-Z]{3}$/.test(destination)) {
     return sendJson(res, 400, { error: '출발·도착 공항 코드는 영문 3자리 IATA 코드여야 합니다.' });
   }
@@ -61,7 +63,10 @@ async function searchFlights(url, res) {
     return sendJson(res, 400, { error: '출발일과 귀국일을 확인해 주세요.' });
   }
   if (!Number.isInteger(adults) || adults < 1 || adults > 9) {
-    return sendJson(res, 400, { error: '성인 인원은 1~9명으로 입력해 주세요.' });
+    return sendJson(res, 400, { error: '성인은 1명 이상 선택해 주세요.' });
+  }
+  if (!Number.isInteger(children) || children < 0 || !Number.isInteger(infants) || infants < 0 || infants > adults || adults + children + infants > 9) {
+    return sendJson(res, 400, { error: '성인·어린이·유아 인원은 총 9명 이하로 입력하고, 유아 수는 성인 수보다 많을 수 없습니다.' });
   }
 
   try {
@@ -70,6 +75,8 @@ async function searchFlights(url, res) {
     for (const key of ['originLocationCode', 'destinationLocationCode', 'departureDate', 'returnDate', 'adults']) {
       apiUrl.searchParams.set(key, params[key]);
     }
+    if (children) apiUrl.searchParams.set('children', String(children));
+    if (infants) apiUrl.searchParams.set('infants', String(infants));
     apiUrl.searchParams.set('max', '8');
     const response = await fetch(apiUrl, {
       headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.amadeus+json' },
