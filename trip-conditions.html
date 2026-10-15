@@ -87,13 +87,6 @@
   .tab.on{background:var(--teal-d);border-color:var(--teal-d);color:#fff;box-shadow:0 8px 20px rgba(29,115,90,.25)}
   .panes{border:1px solid var(--line);border-radius:20px;background:#fff}
   .aside{position:sticky;top:16px;background:var(--gray);border-radius:20px;padding:24px 22px 26px}
-  .aside h3{margin:0 0 4px;font-size:18px}
-  .aside .hint{margin:0 0 18px;font-size:13px;color:var(--sub)}
-  .bud{margin-bottom:16px}
-  .bud label{display:flex;justify-content:space-between;font-size:14px;font-weight:700;margin-bottom:6px}
-  .bud label span{color:var(--teal-d)}
-  .bud-total{display:flex;justify-content:space-between;align-items:baseline;padding:14px 0;border-top:1px solid var(--gray-d);border-bottom:1px solid var(--gray-d);margin:6px 0 18px;font-weight:700}
-  .bud-total strong{font-size:22px;color:var(--teal-d)}
   .pane{display:none;padding:22px 24px 28px}
   .pane.on{display:block}
   .pane h3{margin:0 0 16px;font-size:17px}
@@ -265,14 +258,9 @@
   </div>
 
   <aside class="aside">
-    <h3>예산</h3>
-    <p class="hint">1인 기준, 항목별 예산을 정해 보세요.</p>
-    <div class="bud"><label>✈ 항공 <span id="b-air-v"></span></label><input class="range" id="b-air" type="range" min="0" max="300" step="5" value="60"></div>
-    <div class="bud"><label>🏨 숙소 (전체) <span id="b-stay-v"></span></label><input class="range" id="b-stay" type="range" min="0" max="300" step="5" value="60"></div>
-    <div class="bud"><label>📍 관광 <span id="b-tour-v"></span></label><input class="range" id="b-tour" type="range" min="0" max="100" step="5" value="20"></div>
-    <div class="bud"><label>🍽 맛집 <span id="b-food-v"></span></label><input class="range" id="b-food" type="range" min="0" max="100" step="5" value="30"></div>
-    <div class="bud-total"><span>총 예산</span><strong id="b-total"></strong></div>
-    <section class="summary">
+    <!-- 예산 영역: budget.js 가 렌더링한다. 탭에서는 TripBudget.set('air', 금액, 'KRW'|'USD'|…) 로 금액을 확정 -->
+    <div id="budget-root"></div>
+    <section class="summary" style="margin-top:20px">
       <h3>선택한 조건</h3>
       <dl id="summary"></dl>
     </section>
@@ -282,6 +270,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="budget.js"></script>
 <script>
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
@@ -293,8 +282,7 @@
     dest: '',
     start: null, end: null,
     guests: { adult: 0, child: 0, infant: 0, pet: 0 },
-    opts: {},
-    budget: { air: 0, stay: 0, tour: 0, food: 0 }
+    opts: {}
   };
 
   /* ---------- 패널 열고 닫기 ---------- */
@@ -445,16 +433,8 @@
       renderAll();
     });
   });
-  const BUD = ['air', 'stay', 'tour', 'food'];
-  function renderBudget() {
-    let sum = 0;
-    BUD.forEach(k => {
-      const v = +$('#b-' + k).value; state.budget[k] = v; sum += v;
-      $('#b-' + k + '-v').textContent = v ? `${v}만원` : '미정';
-    });
-    $('#b-total').textContent = sum ? `${sum}만원` : '미정';
-  }
-  BUD.forEach(k => $('#b-' + k).addEventListener('input', () => { renderBudget(); renderSummary(); }));
+  // 예산은 budget.js(TripBudget)가 관리한다. 금액이 바뀌면 요약만 갱신.
+  document.addEventListener('tripbudget:change', () => renderSummary());
   $('#tabs').addEventListener('click', e => {
     const t = e.target.closest('.tab'); if (!t) return;
     $$('.tab').forEach(x => x.classList.toggle('on', x === t));
@@ -472,8 +452,7 @@
       ['숙소', `${j(o.stayType)} · ${j(o.stayStar)}` + (o.stayPref.length ? ` · ${o.stayPref.join(', ')}` : '')],
       ['관광', `${j(o.tourTheme)} · ${j(o.tourPace)} · ${j(o.tourMove)}`],
       ['맛집', `${j(o.foodKind)} · ${j(o.foodBudget)}` + (o.foodPref.length ? ` · ${o.foodPref.join(', ')}` : '')],
-      ['예산', Object.values(state.budget).some(Boolean)
-        ? `항공 ${state.budget.air} · 숙소 ${state.budget.stay} · 관광 ${state.budget.tour} · 맛집 ${state.budget.food} (만원)` : '미정']
+      ['예산', window.TripBudget ? window.TripBudget.summaryText() : '미정']
     ];
     $('#summary').innerHTML = rows.map(r => `<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join('');
   }
@@ -541,13 +520,13 @@
   });
   $('#saveBtn').addEventListener('click', () => {
     const data = { dest: state.dest, start: state.start && state.start.toISOString().slice(0, 10),
-      end: state.end && state.end.toISOString().slice(0, 10), guests: state.guests, flight: air, budget: state.budget, options: state.opts };
+      end: state.end && state.end.toISOString().slice(0, 10), guests: state.guests, flight: air, budget: window.TripBudget ? window.TripBudget.get() : null, options: state.opts };
     try { localStorage.setItem('gonsang-trip-conditions', JSON.stringify(data)); } catch (_) {}
     console.log('trip conditions', data);
     toast('여행 조건을 저장했어요');
   });
 
-  renderCal(); renderGuest(); renderBudget(); renderAll();
+  renderCal(); renderGuest(); renderAll();
 })();
 </script>
 </body>
