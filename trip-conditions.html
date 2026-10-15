@@ -908,6 +908,8 @@
     $('#destClear').hidden = !state.dest;
     renderFlight();
     renderSummary();
+    // 예산 모듈에 읽기용 조건만 전달한다. 선택한 조건·항공·숙소 상태는 변경하지 않는다.
+    window.TripBudget?.setContext({ dest: state.dest, guests: state.guests });
   }
 
   /* ---------- 항공 검색 폼 (상단 선택과 연동) ---------- */
