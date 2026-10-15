@@ -129,6 +129,95 @@
   .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#222;color:#fff;padding:12px 20px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:.25s}
   .toast.show{opacity:1}
 
+  /* FLIGHT DEMO STYLE START — scoped to the air tab; no budget selectors. */
+  #flight-demo-root{container-type:inline-size;container-name:flight-demo;margin-top:24px;color:#132d3d;scroll-margin-top:18px}
+  #flight-demo-root [hidden]{display:none!important}
+  #flight-demo-root button,#flight-demo-root select,#flight-demo-root input{font:inherit}
+  #flight-demo-root button:focus-visible,#flight-demo-root a:focus-visible,#flight-demo-root input:focus-visible,#flight-demo-root select:focus-visible{outline:3px solid #73b7a3;outline-offset:3px}
+  #flight-demo-root .fd-intro{border:1px dashed #adc8bd;border-radius:16px;padding:26px;background:#f5faf7;text-align:center}
+  #flight-demo-root .fd-intro h3{margin:12px 0;font-size:21px}
+  #flight-demo-root .fd-intro p{font-size:13px;color:#63766e;line-height:1.7}
+  #flight-demo-root .fd-chip{display:inline-block;padding:5px 9px;border-radius:6px;background:#e2f2eb;color:#21604b;font-size:10px;font-weight:800;letter-spacing:.07em}
+  #flight-demo-root .fd-btn{border:0;border-radius:9px;padding:11px 15px;background:#123d32;color:white;font-size:13px;font-weight:750;cursor:pointer}
+  #flight-demo-root .fd-btn.fd-light{background:#e8f2ed;color:#1d735a}
+  #flight-demo-root .fd-link{font-size:12px;color:#256a55;text-decoration:underline;cursor:pointer;padding:4px 0}
+  #flight-demo-root .fd-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px}
+  #flight-demo-root .fd-head h3{font-size:22px;margin:9px 0 5px;letter-spacing:-.7px}
+  #flight-demo-root .fd-sub{font-size:12px;line-height:1.7;color:#65776f;margin:0}
+  #flight-demo-root .fd-note{padding:10px 12px;border-radius:9px;background:#f1f5f2;font-size:11px;line-height:1.6;color:#65776f;margin:12px 0}
+  #flight-demo-root .fd-stale{padding:12px;background:#fff4da;border-radius:9px;color:#7c581b;font-size:12px;margin-bottom:12px}
+  #flight-demo-root .fd-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:14px 0}
+  #flight-demo-root .fd-toolbar strong{font-size:13px}
+  #flight-demo-root .fd-tools{display:flex;gap:12px}
+  #flight-demo-root .fd-layout{display:grid;grid-template-columns:145px minmax(0,1fr);gap:14px;align-items:start}
+  #flight-demo-root .fd-filters{padding:13px 12px;background:#f3f6f4;border-radius:12px}
+  #flight-demo-root .fd-filters h4{font-size:13px;margin:0 0 12px}
+  #flight-demo-root .fd-filter-group{margin:0;padding:14px 0;border:0;border-top:1px solid #dae3de;min-width:0}
+  #flight-demo-root .fd-filter-group legend{font-size:12px;font-weight:800;padding-top:14px;margin-bottom:8px}
+  #flight-demo-root .fd-check{display:flex;align-items:center;gap:6px;font-size:11px;margin:8px 0;line-height:1.5;cursor:pointer}
+  #flight-demo-root .fd-check input{accent-color:#1d735a;flex:none;width:15px;height:15px;margin:0}
+  #flight-demo-root .fd-check small{display:block;color:#7c8e85;font-size:10px}
+  #flight-demo-root .fd-time-label{display:block;font-size:10px;line-height:1.7;color:#60766b;margin-bottom:6px}
+  #flight-demo-root input[type=range]{width:100%;accent-color:#1d735a;display:block;margin:6px 0 9px}
+  #flight-demo-root .fd-range-name{display:flex;justify-content:space-between;font-size:10px;color:#60766b}
+  #flight-demo-root .fd-sort{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid #dae3de;border-radius:12px;overflow:hidden;margin-bottom:12px}
+  #flight-demo-root .fd-sort button{padding:12px 8px;text-align:left;background:#fff;border-right:1px solid #dae3de;min-width:0}
+  #flight-demo-root .fd-sort button:last-child{border:0}
+  #flight-demo-root .fd-sort button[aria-pressed=true]{background:#113f34;color:white}
+  #flight-demo-root .fd-sort span{display:block;font-size:11px;font-weight:700}
+  #flight-demo-root .fd-sort b{display:block;font-size:16px;margin-top:5px;letter-spacing:-.5px}
+  #flight-demo-root .fd-sort small{display:block;font-size:10px;opacity:.7;margin-top:3px}
+  #flight-demo-root .fd-list{display:grid;gap:12px}
+  #flight-demo-root .fd-card{border:1px solid #dce5df;border-radius:14px;background:white;box-shadow:0 3px 9px #152c1f07;overflow:hidden}
+  #flight-demo-root .fd-card.fd-selected{border:2px solid #1d735a}
+  #flight-demo-root .fd-card-top{padding:13px 14px 5px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  #flight-demo-root .fd-airline{font-size:12px;font-weight:800;display:flex;align-items:center;gap:8px}
+  #flight-demo-root .fd-logo{width:29px;height:29px;display:grid;place-items:center;border-radius:9px;background:#e3edf7;color:#2f587e;font-size:11px}
+  #flight-demo-root .fd-heart{font-size:24px;line-height:1;padding:2px;color:#7d9289}
+  #flight-demo-root .fd-heart[aria-pressed=true]{color:#d46a6a}
+  #flight-demo-root .fd-tag{font-size:9px;border-radius:5px;padding:4px 6px;background:#e9f6ea;color:#397444;margin-left:5px}
+  #flight-demo-root .fd-leg{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:8px;align-items:center;padding:10px 15px}
+  #flight-demo-root .fd-leg-time strong{font-size:21px;font-weight:600;letter-spacing:-.7px}
+  #flight-demo-root .fd-leg-time small{display:block;font-size:11px;margin-top:3px;color:#71847a}
+  #flight-demo-root .fd-leg-time:last-child{text-align:right}
+  #flight-demo-root .fd-leg-time sup{font-size:10px;color:#1d735a;letter-spacing:0;margin-left:3px}
+  #flight-demo-root .fd-flight-path{text-align:center;font-size:10px;color:#65776f}
+  #flight-demo-root .fd-flight-path i{display:block;position:relative;border-top:1px solid #c8d3cd;margin:8px 0;font-style:normal}
+  #flight-demo-root .fd-flight-path i:after{content:'✈';position:absolute;right:-2px;top:-10px;font-size:14px;color:#6e8b7e;background:#fff}
+  #flight-demo-root .fd-flight-path em{font-style:normal;color:#2e7c66}
+  #flight-demo-root .fd-leg-label{font-size:9px;color:#7c8e85;padding:3px 15px 0}
+  #flight-demo-root .fd-price{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;background:#f5f8f6;border-top:1px solid #e5ebe7;margin-top:7px}
+  #flight-demo-root .fd-price small{display:block;color:#75887e;font-size:10px;line-height:1.6}
+  #flight-demo-root .fd-price strong{display:block;font-size:24px;letter-spacing:-.8px}
+  #flight-demo-root .fd-price .fd-btn{white-space:nowrap}
+  #flight-demo-root .fd-details{padding:9px 14px;font-size:11px;color:#65776f;line-height:1.8;border-top:1px solid #e5ebe7}
+  #flight-demo-root .fd-details summary{cursor:pointer}
+  #flight-demo-root .fd-selection{padding:13px;border-radius:10px;background:#e6f3eb;color:#1d6048;font-size:12px;line-height:1.8;margin:12px 0}
+  #flight-demo-root .fd-selection strong{display:block}
+  #flight-demo-root .fd-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin:12px 0}
+  #flight-demo-root .fd-date{border:1px solid #dce5df;border-radius:8px;padding:10px 2px;text-align:center;background:#fff}
+  #flight-demo-root .fd-date span{display:block;font-size:10px;color:#65776f}
+  #flight-demo-root .fd-date b{display:block;font-size:11px;margin-top:5px}
+  #flight-demo-root .fd-date[aria-pressed=true]{border-color:#1d735a;background:#e6f3eb}
+  #flight-demo-root .fd-date:disabled{opacity:.35;cursor:default}
+  #flight-demo-root .fd-explore{padding:14px;background:#f4f8f5;border:1px solid #dce5df;border-radius:12px;margin-bottom:14px}
+  #flight-demo-root .fd-explore select{padding:7px;border:1px solid #c5d6ca;border-radius:7px;background:white;margin:8px 0 12px;font-size:12px}
+  #flight-demo-root .fd-cities{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+  #flight-demo-root .fd-city{text-align:left;padding:10px;border:1px solid #dce5df;background:#fff;border-radius:8px}
+  #flight-demo-root .fd-city b{display:block;font-size:12px}
+  #flight-demo-root .fd-city span{display:block;color:#2b795e;font-size:12px;margin-top:6px}
+  #flight-demo-root .fd-provenance{font-size:11px;color:#6f8277;line-height:1.8;margin-top:15px}
+  #flight-demo-root .fd-provenance a{color:#286b53}
+  @container flight-demo (max-width:550px){
+    #flight-demo-root .fd-layout{grid-template-columns:1fr}
+    #flight-demo-root .fd-filters{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+    #flight-demo-root .fd-filters>h4,#flight-demo-root .fd-filters>button{grid-column:1/-1}
+    #flight-demo-root .fd-sort b{font-size:15px}
+    #flight-demo-root .fd-calendar{grid-template-columns:repeat(4,minmax(0,1fr))}
+    #flight-demo-root .fd-cities{grid-template-columns:1fr 1fr}
+  }
+  /* FLIGHT DEMO STYLE END */
+
   @media (max-width:760px){
     .search{flex-direction:column;border-radius:24px;height:auto}
     .seg{padding:12px 20px;border-radius:24px}
@@ -189,7 +278,7 @@
     <div class="ftabs" id="ftabs">
       <button class="ftab on" data-v="왕복" type="button">왕복</button>
       <button class="ftab" data-v="편도" type="button">편도</button>
-      <button class="ftab" data-v="다구간" type="button">다구간</button>
+      <button class="ftab" data-v="다구간" type="button" disabled title="모의 검색은 편도와 왕복을 지원합니다">다구간 · 준비중</button>
     </div>
     <div class="fcard">
       <div class="frow" id="fr-from"><i>➤</i><span id="fFrom">서울 SEL</span></div>
@@ -202,8 +291,11 @@
       <div class="opts" data-key="airClass" data-mode="single">
         <button class="opt on" type="button">일반석</button><button class="opt" type="button">프리미엄 일반석</button><button class="opt" type="button">비즈니스</button>
       </div></div>
-    <button class="fgo" id="fGo" type="button" disabled>항공권 검색</button>
+    <button class="fgo" id="fGo" type="button" disabled>이 조건으로 항공권 조회</button>
     <p class="fhint">도착 도시·날짜·탑승객은 상단 선택과 연동돼요. 항목을 누르면 상단 선택창이 열립니다.</p>
+    <!-- FLIGHT DEMO VIEW START: all results stay inside the air tab. -->
+    <div id="flight-demo-root" aria-label="모의 항공권 검색 결과"></div>
+    <!-- FLIGHT DEMO VIEW END -->
   </div>
 
   <div class="pane" id="pane-stay">
@@ -271,6 +363,276 @@
 <div class="toast" id="toast"></div>
 
 <script src="budget.js"></script>
+<!-- FLIGHT DEMO DATA START: local fixtures only; budget.js is independent. -->
+<script id="flight-demo-data">
+/* Offline, deterministic flight fixtures. No availability or live fare claims. */
+(() => {
+  'use strict';
+  const routes = {
+    '도쿄': ['일본', 'HND', 'Asia/Tokyo', 140, 260000, 650000, 0],
+    '오사카': ['일본', 'KIX', 'Asia/Tokyo', 115, 240000, 540000, 0],
+    '교토': ['일본', 'KIX', 'Asia/Tokyo', 115, 240000, 540000, 0],
+    '후쿠오카': ['일본', 'FUK', 'Asia/Tokyo', 85, 200000, 450000, 0],
+    '방콕': ['동남아', 'BKK', 'Asia/Bangkok', 355, 350000, 750000, 0],
+    '다낭': ['동남아', 'DAD', 'Asia/Ho_Chi_Minh', 280, 280000, 580000, 0],
+    '타이베이': ['동아시아', 'TPE', 'Asia/Taipei', 165, 260000, 550000, 0],
+    '싱가포르': ['동남아', 'SIN', 'Asia/Singapore', 390, 420000, 850000, 0],
+    '홍콩': ['동아시아', 'HKG', 'Asia/Hong_Kong', 235, 270000, 600000, 0],
+    '파리': ['유럽', 'CDG', 'Europe/Paris', 850, 850000, 1750000, 0],
+    '런던': ['유럽', 'LHR', 'Europe/London', 865, 850000, 1800000, 0],
+    '로마': ['유럽', 'FCO', 'Europe/Rome', 820, 900000, 1800000, 0],
+    '프라하': ['유럽', 'PRG', 'Europe/Prague', 790, 950000, 1900000, 0],
+    '바르셀로나': ['유럽', 'BCN', 'Europe/Madrid', 870, 950000, 1900000, 0],
+    '뉴욕': ['북미', 'JFK', 'America/New_York', 845, 1150000, 2400000, 0],
+    '샌프란시스코': ['북미', 'SFO', 'America/Los_Angeles', 660, 950000, 1850000, 0],
+    '로스앤젤레스': ['북미', 'LAX', 'America/Los_Angeles', 700, 980000, 1950000, 0],
+    '밴쿠버': ['북미', 'YVR', 'America/Vancouver', 610, 950000, 1800000, 0],
+    '시드니': ['오세아니아', 'SYD', 'Australia/Sydney', 620, 800000, 1700000, 0],
+    '괌': ['오세아니아', 'GUM', 'Pacific/Guam', 270, 430000, 900000, 0],
+    '퀸스타운': ['오세아니아', 'ZQN', 'Pacific/Auckland', 930, 1300000, 2500000, 1],
+    '두바이': ['중동·아프리카', 'DXB', 'Asia/Dubai', 640, 850000, 1700000, 0],
+    '이스탄불': ['중동·아프리카', 'IST', 'Europe/Istanbul', 730, 900000, 1800000, 0],
+    '케이프타운': ['중동·아프리카', 'CPT', 'Africa/Johannesburg', 1170, 1450000, 2600000, 1],
+    '칸쿤': ['중남미', 'CUN', 'America/Cancun', 1200, 1600000, 2900000, 1],
+    '리마': ['중남미', 'LIM', 'America/Lima', 1410, 1700000, 3100000, 1]
+  };
+  const carrierGroups = {
+    '일본': ['제주항공', '티웨이항공', '피치항공', '대한항공', '아시아나항공', '일본항공'],
+    '동아시아': ['제주항공', '티웨이항공', '중화항공', '대한항공', '아시아나항공', '캐세이퍼시픽'],
+    '동남아': ['제주항공', '진에어', '티웨이항공', '대한항공', '아시아나항공', '싱가포르항공'],
+    '유럽': ['중국동방항공', '카타르항공', '대한항공', '아시아나항공', '루프트한자', '터키항공'],
+    '북미': ['에어프레미아', '캐세이퍼시픽', '대한항공', '아시아나항공', '유나이티드항공', '델타항공'],
+    '오세아니아': ['티웨이항공', '젯스타', '대한항공', '아시아나항공', '싱가포르항공', '캐세이퍼시픽'],
+    '중동·아프리카': ['카타르항공', '에미레이트항공', '대한항공', '터키항공', '에티하드항공', '싱가포르항공'],
+    '중남미': ['아에로멕시코', '유나이티드항공', '대한항공', '델타항공', '에어캐나다', '아메리칸항공']
+  };
+  const round = value => Math.round(value / 100) * 100;
+  const iso = date => `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+  function validDate(value) { return /^\d{4}-\d{2}-\d{2}$/.test(value || '') && Number.isFinite(Date.parse(value)) && iso(new Date(`${value}T00:00:00Z`)) === value; }
+  function shiftDate(value, days) { const date = new Date(`${value}T00:00:00Z`); date.setUTCDate(date.getUTCDate() + days); return iso(date); }
+  function profile(city) {
+    const row = routes[city];
+    return row ? { city, region:row[0], airport:row[1], zone:row[2], minutes:row[3], low:row[4], high:row[5], minStops:row[6] } : null;
+  }
+  function normalize(query) {
+    const q = { ...query, guests:{ adult:0, child:0, infant:0, ...query.guests } };
+    if (!profile(q.city)) throw Error('이 도시는 모의 운임이 준비되어 있지 않아요. 추천 도시 목록에서 선택해 주세요.');
+    if (!['왕복', '편도'].includes(q.type)) throw Error('모의 검색은 왕복과 편도를 지원합니다.');
+    if (!['SEL', 'ICN', 'GMP', 'PUS', 'CJU'].includes(q.home)) throw Error('지원하는 출발 공항을 선택해 주세요.');
+    if (!validDate(q.start) || (q.type === '왕복' && (!validDate(q.end) || q.end <= q.start))) throw Error('가는 날과 오는 날을 다시 확인해 주세요.');
+    for (const count of Object.values(q.guests)) if (!Number.isInteger(count) || count < 0 || count > 16) throw Error('여행자 수를 다시 확인해 주세요.');
+    if (!q.guests.adult || q.guests.infant > q.guests.adult) throw Error('성인은 1명 이상, 유아는 성인 수 이하로 설정해 주세요.');
+    return q;
+  }
+  function hash(text) { return Array.from(text).reduce((n, char) => (Math.imul(n, 31) + char.charCodeAt(0)) >>> 0, 7); }
+  const formatters = new Map();
+  function partsAt(timestamp, zone) {
+    if (!formatters.has(zone)) formatters.set(zone, new Intl.DateTimeFormat('en-CA', { timeZone:zone, year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23' }));
+    return Object.fromEntries(formatters.get(zone).formatToParts(timestamp).map(part => [part.type, part.value]));
+  }
+  function utcFromLocal(date, minutes, zone) {
+    const target = Date.parse(`${date}T00:00:00Z`) + minutes * 60000;
+    let value = target;
+    for (let i = 0; i < 3; i++) {
+      const p = partsAt(value, zone), local = Date.parse(`${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:00Z`);
+      value += target - local;
+    }
+    return value;
+  }
+  function leg(date, departMinute, minutes, origin, destination, originZone, destinationZone, stops, via) {
+    const departureUtc = utcFromLocal(date, departMinute, originZone), arrivalUtc = departureUtc + minutes * 60000, a = partsAt(arrivalUtc, destinationZone);
+    const arrivalDate = `${a.year}-${a.month}-${a.day}`;
+    return { date, departMinute, depart:`${String(Math.floor(departMinute / 60)).padStart(2, '0')}:${String(departMinute % 60).padStart(2, '0')}`, arrive:`${a.hour}:${a.minute}`, arrivalDate,
+      dayOffset:Math.round((Date.parse(arrivalDate) - Date.parse(date)) / 86400000), departureUtc, arrivalUtc, minutes, origin, destination, stops, via };
+  }
+  function buildOffers(input) {
+    const q = normalize(input), p = profile(q.city), seed = hash(`${q.city}|${q.home}|${q.start}|${q.type==='왕복'?q.end:''}|${q.type}`);
+    const cabinFactor = q.cabin === '비즈니스' ? 2.8 : q.cabin === '프리미엄 일반석' ? 1.65 : 1;
+    const weekday = new Date(`${q.start}T12:00:00Z`).getUTCDay();
+    const dateFactor = 0.94 + (seed % 11) / 100 + ([0,5,6].includes(weekday) ? 0.08 : 0);
+    const minStops = Math.max(p.minStops, q.home === 'CJU' || (q.home === 'PUS' && p.minutes > 500) ? 1 : 0);
+    const carriers = carrierGroups[p.region], slots = [360,425,480,575,660,795,910,1035,1120,1210,1320,1390];
+    const vias = p.region === '중남미' ? ['LAX','DFW','MEX'] : p.region === '북미' ? ['NRT','HKG','TPE'] : p.region === '유럽' ? ['PVG','DOH','IST'] : p.region === '오세아니아' ? ['SIN','HKG','NRT'] : p.region === '중동·아프리카' ? ['DOH','DXB','IST'] : ['PVG','TPE','HKG'];
+    return Array.from({ length:18 }, (_, i) => {
+      const stops = Math.min(2, minStops + (i % 6 === 1 || i % 6 === 5 ? 1 : i === 16 ? 2 : 0));
+      const airline = carriers[i % carriers.length];
+      const short = p.minutes < 500, baseRatio = short ? [0.02,0.00,0.18,0.48,0.64,0.29][i % 6] : [0.25,0.00,0.65,0.53,0.45,0.15][i % 6];
+      const connectionDiscount = stops > minStops ? 0.88 : 1;
+      const price = round((p.low + (p.high - p.low) * (baseRatio + Math.floor(i / 6) * 0.08)) * dateFactor * connectionDiscount * cabinFactor * (q.type === '편도' ? (short ? 0.56 : 0.65) : 1) * (q.home === 'PUS' ? 1.04 : q.home === 'CJU' ? 1.12 : 1));
+      const groupPrice = round(price * (q.guests.adult + q.guests.child * 0.75 + q.guests.infant * 0.10));
+      const airport = q.city === '도쿄' && i % 3 === 0 ? 'NRT' : p.airport;
+      const home = q.home === 'SEL' ? (p.region === '일본' && i % 6 >= 3 ? 'GMP' : 'ICN') : q.home;
+      const origin = q.reverse ? airport : home, destination = q.reverse ? home : airport;
+      const originZone = q.reverse ? p.zone : 'Asia/Seoul', destinationZone = q.reverse ? 'Asia/Seoul' : p.zone;
+      const minutes = p.minutes + stops * 150 + (i % 4) * 15;
+      const depart = slots[(i + seed % 3) % slots.length], returnDepart = slots[(i * 2 + 3) % slots.length];
+      const hubs = vias.filter(code=>code!==origin&&code!==destination);
+      const via = stops ? (stops===2 ? hubs.slice(0,2).join(' · ') : hubs[i % hubs.length]) : '';
+      const outbound = leg(q.start, depart, minutes, origin, destination, originZone, destinationZone, stops, via);
+      const inbound = q.type === '왕복' ? leg(q.end, returnDepart, minutes + (short ? 10 : 35), destination, origin, destinationZone, originZone, stops, via) : null;
+      return { id:`demo-${seed}-${i}`, airline, price, groupPrice, stops, baggage:i % 3 !== 0,
+        outbound, inbound, duration:outbound.minutes + (inbound?.minutes || 0), recommendation:price / p.low + minutes / p.minutes * 0.48 + stops * 0.2, cabin:q.cabin || '일반석' };
+    }).filter(offer=>!offer.inbound || offer.inbound.departureUtc > offer.outbound.arrivalUtc + 120 * 60000);
+  }
+  function filterOffers(offers, filters) {
+    return offers.filter(offer => filters.stops.includes(offer.stops) && filters.airlines.includes(offer.airline)
+      && offer.outbound.departMinute >= filters.outMin * 60 && offer.outbound.departMinute <= filters.outMax * 60 + 59
+      && (!offer.inbound || (offer.inbound.departMinute >= filters.inMin * 60 && offer.inbound.departMinute <= filters.inMax * 60 + 59))
+      && offer.outbound.minutes <= filters.maxDuration && offer.price <= filters.maxPrice && (!filters.baggage || offer.baggage));
+  }
+  function calendar(q) {
+    const today = new Date(), localToday = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    return Array.from({length:7}, (_, i) => {
+      const delta = i - 3, start = shiftDate(q.start, delta), end = q.end ? shiftDate(q.end, delta) : '';
+      const prices=buildOffers({...q,start,end}).map(offer=>offer.price);
+      return { start, end, disabled:start < localToday || !prices.length, price:prices.length?Math.min(...prices):null };
+    });
+  }
+  globalThis.FlightDemoData = Object.freeze({ profiles:Object.keys(routes).map(profile), profile, normalize, buildOffers, filterOffers, calendar, shiftDate, validDate });
+})();
+
+</script>
+<!-- FLIGHT DEMO DATA END -->
+<!-- FLIGHT DEMO CONTROLLER START: local fixtures and events, no API or budget writes. -->
+<script id="flight-demo-ui">
+(() => {
+  'use strict';
+  const root = document.getElementById('flight-demo-root'), D = window.FlightDemoData;
+  if (!root || !D) return;
+  const e = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const money = value => `₩${Math.round(value).toLocaleString('ko-KR')}`;
+  const duration = value => `${Math.floor(value / 60)}시간${value % 60 ? ` ${value % 60}분` : ''}`;
+  const dateLabel = value => { const date = new Date(`${value}T12:00:00Z`); return `${date.getUTCMonth()+1}/${date.getUTCDate()} (${['일','월','화','수','목','금','토'][date.getUTCDay()]})`; };
+  const keyOf = q => JSON.stringify([q.city,q.home,q.start,q.end,q.type,q.reverse,q.cabin,q.guests]);
+  const load = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
+  const save = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch {} };
+  let query = null, offers = [], filters = {}, sort = 'best', selected = null, favoriteOnly = false;
+  const storedFavorites=load('gonsang-flight-favorites-v1', []);
+  let favorites = new Set(Array.isArray(storedFavorites)?storedFavorites:[]);
+  const $ = selector => root.querySelector(selector);
+  function resetFilters() {
+    filters = { stops:[0,1,2], airlines:[...new Set(offers.map(item => item.airline))], outMin:0, outMax:23, inMin:0, inMax:23,
+      maxDuration:Math.ceil(Math.max(...offers.map(item=>item.outbound.minutes))/15)*15, maxPrice:Math.ceil(Math.max(...offers.map(item=>item.price))/10000)*10000, baggage:false };
+    favoriteOnly = false;
+  }
+  function rangeControl(name, label, value, max, step=1) {
+    return `<label class="fd-range-name" for="fd-${name}">${label}<span id="fd-value-${name}"></span></label><input id="fd-${name}" data-filter="${name}" type="range" min="0" max="${max}" step="${step}" value="${value}">`;
+  }
+  function timeControls(prefix, title) {
+    return `<fieldset class="fd-filter-group"><legend>${title}</legend><output class="fd-time-label" id="fd-time-${prefix}"></output>${rangeControl(`${prefix}Min`,'시작 시각',0,23)}${rangeControl(`${prefix}Max`,'마지막 시각',23,23)}</fieldset>`;
+  }
+  function renderFrame() {
+    const p = D.profile(query.city), people = query.guests.adult + query.guests.child + query.guests.infant;
+    const regionLow = p.low * (query.type === '편도' ? (p.minutes < 500 ? .56 : .65) : 1);
+    root.innerHTML = `
+      <div class="fd-head"><div><span class="fd-chip">DEMO · 가데이터</span><h3>${e(query.reverse ? `${query.city} → ${query.home}` : `${query.home} → ${query.city}`)}</h3><p class="fd-sub">${e(dateLabel(query.start))}${query.type === '왕복' ? ` — ${e(dateLabel(query.end))}` : ''} · ${e(query.type)} · 여행자 ${people}명 · ${e(query.cabin)}</p></div><span aria-hidden="true" style="font-size:32px;color:#9dc5b2">✈</span></div>
+      <p class="fd-note">실제 예약이 불가능한 시연용 운임입니다. 항공사·시간·수하물 조합은 모두 가상이며, 각 공항 현지 시각으로 표시합니다.${query.city === '교토' ? ' 교토는 간사이공항(KIX) 도착 후 육로 이동이 필요합니다.' : ''}</p>
+      <p class="fd-stale" id="fd-stale" hidden>상단 조건이 변경됐어요. ‘항공권 조회’를 다시 눌러 새 조건을 적용해 주세요.</p>
+      <div class="fd-toolbar"><strong id="fd-count" role="status"></strong><div class="fd-tools"><button class="fd-link" data-action="calendar" aria-expanded="false">날짜별 최저가</button><button class="fd-link" data-action="explore" aria-expanded="false">지역별 운임 탐색</button></div></div>
+      <div id="fd-calendar" class="fd-calendar" hidden></div>
+      <section id="fd-explore" class="fd-explore" hidden><strong style="font-size:13px">다음 여행지는 어디로 갈까요?</strong><p class="fd-sub">일반석 성인 1인의 ${e(query.type)} 모의 기준가 · 도시를 누르면 현재 일정으로 검색합니다.</p><label for="fd-region" class="fd-sub">지역 선택 </label><select id="fd-region"><option value="all">모든 지역</option>${[...new Set(D.profiles.map(p=>p.region))].map(region=>`<option>${e(region)}</option>`).join('')}</select><div id="fd-cities" class="fd-cities"></div></section>
+      <div id="fd-selection" class="fd-selection" hidden></div>
+      <div class="fd-layout"><aside class="fd-filters" aria-label="항공권 필터"><h4>원하는 항공편만</h4><button class="fd-link" data-action="reset">필터 초기화</button>
+        <fieldset class="fd-filter-group"><legend>경유</legend>${[0,1,2].map(stops=>{const items=offers.filter(item=>item.stops===stops);return `<label class="fd-check"><input type="checkbox" data-filter="stops" value="${stops}" ${items.length?'checked':'disabled'}><span>${stops===0?'직항':stops===1?'1회 경유':'2회 이상 경유'}<small>${items.length?`${money(Math.min(...items.map(item=>item.price)))}부터`:'해당 없음'}</small></span></label>`;}).join('')}</fieldset>
+        ${timeControls('out','가는 편 출발 시간')}${query.type==='왕복'?timeControls('in','오는 편 출발 시간'):''}
+        <fieldset class="fd-filter-group"><legend>가는 편 최대 소요시간</legend><output class="fd-time-label" id="fd-duration"></output>${rangeControl('maxDuration','최대 시간',filters.maxDuration,filters.maxDuration,15)}</fieldset>
+        <fieldset class="fd-filter-group"><legend>성인 1인 가격 상한</legend><output class="fd-time-label" id="fd-price-limit"></output>${rangeControl('maxPrice','최대 운임',filters.maxPrice,filters.maxPrice,10000)}</fieldset>
+        <fieldset class="fd-filter-group"><legend>추가 조건</legend><label class="fd-check"><input type="checkbox" data-filter="baggage">위탁수하물 포함</label><label class="fd-check"><input type="checkbox" data-filter="favorites">관심 항공편만</label></fieldset>
+        <fieldset class="fd-filter-group"><legend>항공사</legend>${filters.airlines.map(name=>`<label class="fd-check"><input type="checkbox" data-filter="airlines" value="${e(name)}" checked>${e(name)}</label>`).join('')}</fieldset>
+      </aside><div><div class="fd-sort" id="fd-sort" aria-label="항공편 정렬"></div><p id="fd-stat" class="fd-sub" style="margin-bottom:12px"></p><div class="fd-list" id="fd-list" aria-live="polite"></div></div></div>
+      <details class="fd-provenance"><summary>가데이터와 가격 참고 기준</summary><p>2026-10-15 공개 노선 페이지를 참고해 넓은 가격대를 수동 설정했습니다. ${e(p.region)} ${e(query.city)}의 일반석 왕복 기준은 ${money(p.low)}~${money(p.high)}이며, 편도 기준은 ${money(regionLow)}부터 가정했습니다. 날짜·좌석·공항별 가중치는 시연용 규칙입니다. 실제 시장 평균이나 조회한 날짜의 판매가격이 아닙니다.</p><p>참고 노선: <a href="https://www.skyscanner.co.kr/routes/sela/tyoa/seoul-to-tokyo.html" target="_blank" rel="noopener">서울–도쿄</a> · <a href="https://www.skyscanner.co.kr/routes/sela/bkkt/seoul-to-bangkok.html" target="_blank" rel="noopener">방콕</a> · <a href="https://www.skyscanner.co.kr/routes/sela/lond/seoul-to-london.html" target="_blank" rel="noopener">런던</a> · <a href="https://www.skyscanner.co.kr/routes/sela/nyca/seoul-to-new-york.html" target="_blank" rel="noopener">뉴욕</a> · <a href="https://www.skyscanner.co.kr/routes/sela/syd/seoul-to-sydney.html" target="_blank" rel="noopener">시드니</a>. 다른 도시의 가격대는 이 지역별 차이를 참고한 시연용 추정값입니다.</p></details>`;
+    updateFilterLabels(); paint();
+  }
+  function legHtml(leg, title) {
+    const offset = leg.dayOffset ? `<sup>${leg.dayOffset>0?'+':''}${leg.dayOffset}일</sup>` : '';
+    return `<div class="fd-leg-label">${title} · ${e(dateLabel(leg.date))}</div><div class="fd-leg"><div class="fd-leg-time"><strong>${e(leg.depart)}</strong><small>${e(leg.origin)}</small></div><div class="fd-flight-path">${duration(leg.minutes)}<i></i><em>${leg.stops ? `${leg.stops}회 경유 · ${e(leg.via)}` : '직항'}</em></div><div class="fd-leg-time"><strong>${e(leg.arrive)}${offset}</strong><small>${e(leg.destination)}</small></div></div>`;
+  }
+  function cardHtml(offer, index) {
+    const chosen = selected?.offer?.id === offer.id, liked = favorites.has(offer.id), people = query.guests.adult + query.guests.child + query.guests.infant;
+    const tag = sort==='cheap'?'최저가 후보':sort==='fast'?'최단시간 후보':'추천 후보';
+    return `<article class="fd-card${chosen?' fd-selected':''}"><div class="fd-card-top"><div class="fd-airline"><span class="fd-logo" aria-hidden="true">${e(offer.airline.slice(0,2))}</span>${e(offer.airline)}${index===0?`<span class="fd-tag">${tag}</span>`:''}</div><button class="fd-heart" data-action="favorite" data-id="${offer.id}" aria-label="${e(offer.airline)} 관심 항공편 ${liked?'해제':'저장'}" aria-pressed="${liked}">${liked?'♥':'♡'}</button></div>
+      ${legHtml(offer.outbound,'가는 편')}${offer.inbound?legHtml(offer.inbound,'오는 편'):''}
+      <div class="fd-price"><div><small>성인 1인 · ${e(query.type)}</small><strong>${money(offer.price)}</strong><small>총 ${people}명 ${money(offer.groupPrice)}</small></div><button class="fd-btn" data-action="select" data-id="${offer.id}">${chosen?'선택됨 ✓':'후보로 선택 →'}</button></div>
+      <details class="fd-details"><summary>모의 운임 상세</summary><div>${e(offer.cabin)} · 기내수하물 7kg 가정 · ${offer.baggage?'위탁수하물 15kg 포함 가정':'위탁수하물 별도 가정'}<br>세금 포함을 가정한 총액입니다. 어린이 75%, 유아 10% 요율은 시연 계산용이며 실제 항공사 규정이 아닙니다. 예약·발권은 진행되지 않습니다.</div></details></article>`;
+  }
+  function sorted(items, order) {
+    return [...items].sort((a,b)=>order==='cheap'?a.price-b.price:order==='fast'?a.duration-b.duration:a.recommendation-b.recommendation || a.price-b.price);
+  }
+  function paint() {
+    let visible = D.filterOffers(offers,filters); if (favoriteOnly) visible = visible.filter(item=>favorites.has(item.id));
+    $('#fd-count').textContent = `${visible.length} / ${offers.length}개 모의 항공편`;
+    $('#fd-sort').innerHTML = [['best','추천순'],['cheap','최저가'],['fast','최단시간']].map(([order,label])=>{
+      const best = sorted(visible,order)[0]; return `<button data-action="sort" data-sort="${order}" aria-pressed="${sort===order}"><span>${label}</span><b>${best?money(best.price):'—'}</b><small>${best?`${duration(best.outbound.minutes)} · 가는 편`:'조건을 조정해 주세요'}</small></button>`;
+    }).join('');
+    $('#fd-stat').textContent = visible.length ? `모의 결과 평균 ${money(visible.reduce((sum,item)=>sum+item.price,0)/visible.length)} · 성인 1인 ${query.type} 기준` : '현재 필터에 맞는 모의 항공편이 없습니다.';
+    $('#fd-list').innerHTML = visible.length ? sorted(visible,sort).map(cardHtml).join('') : '<div class="fd-intro"><h3>조건에 맞는 항공편이 없어요</h3><p>시간대나 경유 조건을 넓혀 보세요.</p><button class="fd-btn" data-action="reset">필터 초기화</button></div>';
+    const selection = $('#fd-selection'); selection.hidden = !selected;
+    if (selected) selection.innerHTML = `<strong>✓ 여행 후보에 담았어요</strong>${e(selected.offer.airline)} · ${money(selected.offer.price)} / 성인 1인 · 전체 ${money(selected.offer.groupPrice)}<br>이 선택은 가데이터 후보로 브라우저에 저장됩니다.`;
+  }
+  function updateFilterLabels() {
+    for (const prefix of ['out','in']) {
+      const label = $(`#fd-time-${prefix}`); if (label) label.textContent = `${String(filters[`${prefix}Min`]).padStart(2,'0')}:00 ~ ${String(filters[`${prefix}Max`]).padStart(2,'0')}:59`;
+      for (const suffix of ['Min','Max']) { const output=$(`#fd-value-${prefix}${suffix}`); if(output) output.textContent=`${filters[`${prefix}${suffix}`]}시`; }
+    }
+    $('#fd-duration').textContent = duration(filters.maxDuration); $('#fd-price-limit').textContent = money(filters.maxPrice);
+  }
+  function updateFilter(input) {
+    const name=input.dataset.filter; if (!name || !query) return;
+    if (name==='stops'||name==='airlines') filters[name]=Array.from(root.querySelectorAll(`[data-filter="${name}"]:checked`)).map(el=>name==='stops'?Number(el.value):el.value);
+    else if(name==='baggage') filters.baggage=input.checked;
+    else if(name==='favorites') favoriteOnly=input.checked;
+    else {
+      filters[name]=Number(input.value);
+      for (const prefix of ['out','in']) if (filters[`${prefix}Min`]>filters[`${prefix}Max`]) {
+        const other=name.endsWith('Min')?`${prefix}Max`:`${prefix}Min`;
+        filters[other]=filters[name]; const element=$(`#fd-${other}`); if(element)element.value=String(filters[other]);
+      }
+    }
+    updateFilterLabels(); paint();
+  }
+  function paintExplore(region='all') {
+    $('#fd-cities').innerHTML = D.profiles.filter(p=>region==='all'||p.region===region).map(p=>{
+      const offersForCity=D.buildOffers({...query,city:p.city,cabin:'일반석'}), low=offersForCity.length?Math.min(...offersForCity.map(offer=>offer.price)):null;
+      return `<button class="fd-city" data-action="destination" data-city="${e(p.city)}"><b>${e(p.city)} <small>${e(p.airport)}</small></b><span>${low?`${money(low)}부터`:'일정 조정 필요'}</span></button>`;
+    }).join('');
+  }
+  function search(input) {
+    try {
+      query=D.normalize(input); offers=D.buildOffers(query); if(!offers.length)throw Error('왕복 비행시간에 비해 일정이 짧아요. 오는 날짜를 늦춰 다시 조회해 주세요.');sort='best';resetFilters();
+      const previous=load('gonsang-flight-selection-v1',null); selected=previous?.query && keyOf(previous.query)===keyOf(query)?previous:null;
+      renderFrame(); root.scrollIntoView({behavior:'smooth',block:'start'});
+    } catch(error) { root.innerHTML=`<div class="fd-intro"><span class="fd-chip">DEMO</span><h3>검색 조건을 확인해 주세요</h3><p role="status">${e(error.message)}</p></div>`; }
+  }
+  root.addEventListener('input',event=>{if(event.target.type==='range')updateFilter(event.target)});
+  root.addEventListener('change',event=>{if(event.target.id==='fd-region')paintExplore(event.target.value);else if(event.target.type!=='range')updateFilter(event.target)});
+  root.addEventListener('click',event=>{
+    const button=event.target.closest('[data-action]');if(!button||button.disabled)return;
+    const action=button.dataset.action;
+    if(action==='example'){document.dispatchEvent(new CustomEvent('tripflight:example'));return;}
+    if(!query)return;
+    if(action==='sort'){sort=button.dataset.sort;paint();}
+    if(action==='reset'){resetFilters();renderFrame();}
+    if(action==='calendar'){
+      const calendar=$('#fd-calendar');calendar.hidden=!calendar.hidden;button.setAttribute('aria-expanded',String(!calendar.hidden));
+      if(!calendar.hidden)calendar.innerHTML=D.calendar(query).map(day=>`<button class="fd-date" data-action="date" data-start="${day.start}" data-end="${day.end}" aria-pressed="${day.start===query.start}" ${day.disabled?'disabled':''}><span>${e(dateLabel(day.start))}</span><b>${day.price?money(day.price):'결과 없음'}</b></button>`).join('');
+    }
+    if(action==='explore'){const panel=$('#fd-explore');panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));if(!panel.hidden)paintExplore($('#fd-region').value);}
+    if(action==='date')document.dispatchEvent(new CustomEvent('tripflight:dateschange',{detail:{start:button.dataset.start,end:button.dataset.end}}));
+    if(action==='destination')document.dispatchEvent(new CustomEvent('tripflight:destination',{detail:{city:button.dataset.city}}));
+    if(action==='favorite'){const id=button.dataset.id;favorites.has(id)?favorites.delete(id):favorites.add(id);save('gonsang-flight-favorites-v1',[...favorites]);paint();}
+    if(action==='select'){
+      const offer=offers.find(item=>item.id===button.dataset.id);if(!offer)return;
+      // Future budget adapter: amountKrw is the entire party total; offer.price is one adult.
+      // Listen for tripflight:select separately when the budget team is ready to integrate.
+      selected={version:1,source:'demo',currency:'KRW',query,offer,amountKrw:offer.groupPrice,updatedAt:new Date().toISOString()};
+      save('gonsang-flight-selection-v1',selected);paint();document.dispatchEvent(new CustomEvent('tripflight:select',{detail:selected}));
+    }
+  });
+  window.FlightDemo=Object.freeze({search,updateConditions(input){if(!query||!$('#fd-stale'))return;$('#fd-stale').hidden=keyOf(query)===keyOf(input);}});
+  root.innerHTML='<div class="fd-intro"><span class="fd-chip">OFFLINE FLIGHT DEMO</span><h3>내 조건에 맞는 항공편을 비교해 보세요</h3><p>상단에서 도시·날짜·인원을 고르고 조회하면<br>이곳에 직항·경유 항공편과 모의 운임이 펼쳐집니다.</p><button class="fd-btn fd-light" data-action="example">도쿄 예시 조건으로 살펴보기 →</button></div>';
+})();
+</script>
+<!-- FLIGHT DEMO CONTROLLER END -->
 <script>
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
@@ -470,6 +832,15 @@
 
   /* ---------- 항공 검색 폼 (상단 선택과 연동) ---------- */
   const air = { type: '왕복', from: '서울 SEL', reverse: false };
+  // FLIGHT DEMO BRIDGE START — only reads travel conditions; never writes TripBudget.
+  const flightDate = date => date ? `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}` : '';
+  function flightDemoConditions() {
+    return { city:state.dest, home:(air.from.match(/[A-Z]{3}/)||['SEL'])[0], type:air.type, reverse:air.reverse,
+      start:flightDate(state.start), end:flightDate(state.end), cabin:(state.opts.airClass||['일반석'])[0],
+      guests:{adult:state.guests.adult, child:state.guests.child, infant:state.guests.infant} };
+  }
+  const searchFlightDemo = () => window.FlightDemo?.search(flightDemoConditions());
+  // FLIGHT DEMO BRIDGE END
   function renderFlight() {
     const code = codeOf(state.dest);
     const to = state.dest ? (code ? `${state.dest} ${code}` : state.dest) : '';
@@ -487,6 +858,7 @@
     $('#fPax').textContent = `탑승객 ${pax || 1}명, ${(state.opts.airClass || ['일반석'])[0]}`;
     const ok = !!state.dest && !!state.start && (air.type === '편도' || !!state.end) && state.guests.adult > 0;
     $('#fGo').disabled = !ok;
+    window.FlightDemo?.updateConditions(flightDemoConditions());
   }
   $('#ftabs').addEventListener('click', e => {
     const b = e.target.closest('.ftab'); if (!b) return;
@@ -503,7 +875,24 @@
   $('#fr-to').addEventListener('click', e => { e.stopPropagation(); toTop('dest'); });
   $('#fr-date').addEventListener('click', e => { e.stopPropagation(); toTop('date'); });
   $('#fr-pax').addEventListener('click', e => { e.stopPropagation(); toTop('guest'); });
-  $('#fGo').addEventListener('click', () => toast(`${$('#fFrom').textContent} → ${$('#fTo').textContent} 항공권 조건이 설정됐어요`));
+  $('#fGo').addEventListener('click', searchFlightDemo);
+  // Flight-only navigation events keep the top search and the mock results consistent.
+  document.addEventListener('tripflight:dateschange', event => {
+    const localDate = value => { const [y,m,d]=value.split('-').map(Number);return new Date(y,m-1,d); };
+    state.start=localDate(event.detail.start); if(event.detail.end)state.end=localDate(event.detail.end);
+    view=new Date(state.start.getFullYear(),state.start.getMonth(),1); renderCal();renderAll();searchFlightDemo();
+  });
+  document.addEventListener('tripflight:destination', event => {
+    state.dest=event.detail.city;$('#destInput').value=state.dest;renderAll();searchFlightDemo();
+  });
+  document.addEventListener('tripflight:example', () => {
+    const start=new Date();start.setHours(0,0,0,0);start.setDate(start.getDate()+5);
+    state.dest='도쿄';$('#destInput').value=state.dest;state.start=start;state.end=new Date(start);state.end.setDate(start.getDate()+7);
+    state.guests={adult:2,child:0,infant:0,pet:0};state.opts.airClass=['일반석'];air.type='왕복';air.from='서울 SEL';air.reverse=false;
+    $$('.ftab').forEach(button=>button.classList.toggle('on',button.dataset.v==='왕복'));
+    $$('.opts[data-key="airClass"] .opt').forEach(button=>button.classList.toggle('on',button.textContent==='일반석'));
+    view=new Date(start.getFullYear(),start.getMonth(),1);closeAll();renderCal();renderGuest();renderAll();searchFlightDemo();
+  });
 
   /* ---------- 검색 / 저장 ---------- */
   const toast = msg => {
