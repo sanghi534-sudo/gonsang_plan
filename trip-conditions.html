@@ -267,6 +267,21 @@
 </style>
 </head>
 <body>
+<script>
+/* 새 여행 계획은 빈 상태에서 시작한다.
+ * 이전 방문에서 담아 둔 항공·관광·맛집 선택이 복원되면서 예산이 미리 채워지지 않도록,
+ * 이 탭/창을 처음 열 때 한 번만 선택 저장소를 비운다. (같은 탭에서 새로고침하면 작업은 유지된다)
+ * 목표 예산 설정, 코스 성향, 즐겨찾기, '저장하고 최종 일정 보기'로 저장한 조건은 지우지 않는다. */
+(function () {
+  try {
+    if (sessionStorage.getItem('gonsang-fresh-session')) return;
+    sessionStorage.setItem('gonsang-fresh-session', '1');
+    ['gonsang-flight-selection-v1', 'gonsang-tour-picks-v1', 'gonsang-course-mine-v1', 'gonsang-course-days-v1', 'gonsang-food-picks-v1',
+     'gonsang-food-reserve-picks-v1', 'gonsang-food-reserve-picks-v2', 'gonsang-food-reserve-picks-v3', 'gonsang-food-reserve-picks-v4', 'gonsang-food-reserve-picks-v5']
+      .forEach(function (k) { localStorage.removeItem(k); });
+  } catch (_) { /* 저장소를 못 쓰는 환경이면 건너뛴다 */ }
+})();
+</script>
 
 <!-- ============ 상단 (5/1) : 여행지 · 날짜 · 여행자 ============ -->
 <header class="top">
