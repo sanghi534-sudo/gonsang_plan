@@ -31,11 +31,12 @@
 
   /* ===== 하단: 트리플 스타일 (탭 바 · 본문 · 회색 사이드) ===== */
   .plan{margin:0 0 80px;display:grid;grid-template-columns:minmax(16px,1fr) minmax(0,1060px) 340px minmax(16px,1fr);align-items:start}
-  .tabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);background:var(--teal-d);margin-bottom:24px}
-  .tab{padding:18px 0 16px;border-bottom:4px solid transparent;color:rgba(255,255,255,.72);font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;gap:10px}
+  .tabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);background:#0f4435;margin-bottom:24px;padding-top:6px}
+  .tab{padding:18px 0 16px;border-bottom:4px solid transparent;border-radius:14px 14px 0 0;color:rgba(255,255,255,.6);font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;gap:10px}
   .tab i{font-style:normal;font-size:22px}
-  .tab:hover{color:#fff;background:rgba(255,255,255,.08)}
-  .tab.on{color:#fff;border-bottom-color:#fff}
+  .tab:hover{color:#fff;background:rgba(255,255,255,.1)}
+  .tab.on{color:var(--teal-d);background:#fff;border-bottom-color:var(--teal-d)}
+  .tab.on:hover{background:#fff}
   .panes{grid-column:2;border:1px solid var(--line);border-radius:20px;background:#fff}
   .pane{display:none;padding:22px 24px 28px}
   .pane.on{display:block}
@@ -385,6 +386,69 @@
     plan.forEach(p => p.items.sort((a, b) => toMin(a.t) - toMin(b.t)));
   }
 
+  /* ---------- 관광 · 맛집 탭에서 고른 일정(시간 포함)을 일정표에 반영 ---------- */
+  // 사용자가 직접 고른 항목은 시간을 바꾸지 않는다. 항공 시간과 겹치면 경고만 붙인다.
+  (() => {
+    if (sample) return;
+    const dayKey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const toMin = t => { const [h, m] = String(t).split(':').map(Number); return h * 60 + m; };
+    const pad = t => { const [h, m] = String(t).split(':'); return `${String(h).padStart(2, '0')}:${m}`; };
+    const TIME = /^\d{1,2}:\d{2}$/;
+    const dayIndex = new Map(plan.map((p, i) => [dayKey(p.date), i]));
+    const user = [], replaced = new Set();
+
+    // 관광: 관광 탭 '일정 만들기' 결과 (저장 시점의 내 일정)
+    const course = saved && saved.course;
+    if (course && course.city === dest && Array.isArray(course.days)) {
+      course.days.slice(0, plan.length).forEach((cd, i) => {
+        const idx = dayIndex.has(cd.date) ? dayIndex.get(cd.date) : i;
+        (cd.items || []).filter(p => p && p.id && TIME.test(String(p.time))).forEach(p => {
+          const stay = Number.isFinite(p.end) && Number.isFinite(p.minute) ? Math.max(0, Math.round(p.end - p.minute)) : 0;
+          const move = p.travel && p.travel.minutes ? ` · 이동 ${p.travel.kind} 약 ${p.travel.minutes}분` : '';
+          user.push({ idx, t: pad(p.time), k: '관광', n: p.name, m: `${p.kind || '관광'}${stay ? ` · 약 ${stay}분` : ''}${move}`,
+            c: Number.isFinite(p.feeKrw) ? p.feeKrw : null, user: true });
+        });
+      });
+      if (user.length) replaced.add('관광');
+    }
+
+    // 맛집: 맛집 탭에서 담은 식당과 선택한 예약 시간
+    let fp = {};
+    try { fp = JSON.parse(localStorage.getItem('gonsang-food-reserve-picks-v1') || '{}') || {}; } catch (_) {}
+    const meals = Object.values(fp).filter(p => p && p.dest === dest && dayIndex.has(p.date) && typeof p.name === 'string');
+    meals.forEach(p => {
+      const slotted = TIME.test(String(p.slot));
+      user.push({ idx: dayIndex.get(p.date), t: slotted ? pad(p.slot) : p.meal === '점심' ? '12:30' : '18:30', k: '맛집', n: p.name,
+        m: slotted ? `${pad(p.slot)} 예약 시간으로 선택` : '시간 미정 · 예상 시각', c: Number.isFinite(p.price) ? p.price : 0, user: true });
+    });
+    if (meals.length) replaced.add('맛집');
+    if (!replaced.size) return;
+
+    // 고른 항목이 있는 종류는 예시 항목을 모두 걷어내고 고른 것으로 바꾼다
+    plan.forEach(p => { p.items = p.items.filter(x => !replaced.has(x.k)); });
+    user.forEach(u => { if (plan[u.idx]) plan[u.idx].items.push(u); });
+
+    // 항공 시간과 겹치는 항목에는 경고를 붙인다
+    if (flightSel) {
+      const HOME = ['ICN', 'GMP', 'PUS', 'CJU'];
+      [flightSel.offer.outbound, flightSel.offer.inbound].filter(Boolean).forEach(l => {
+        const idx = dayIndex.get(l.date);
+        if (idx == null) return;
+        if (HOME.includes(l.destination)) {                       // 귀국편: 출발 3시간 전까지 끝나야 한다
+          plan[idx].items.filter(x => x.user && toMin(x.t) > toMin(l.depart) - 180)
+            .forEach(x => { x.m += ` · ⚠ 귀국 항공(${l.depart} 출발)과 시간이 빠듯해요`; });
+        } else {                                                  // 현지 도착편: 도착 후 1시간 30분은 비워 둔다
+          const a = plan[idx + (l.dayOffset || 0)];
+          if (a) a.items.filter(x => x.user && toMin(x.t) < toMin(l.arrive) + 90)
+            .forEach(x => { x.m += ` · ⚠ 항공 도착(${l.arrive}) 전후라 시간이 빠듯해요`; });
+        }
+      });
+    }
+    plan.forEach(p => p.items.sort((a, b) => toMin(a.t) - toMin(b.t)));
+    // 같은 내용을 따로 보여 주던 관광 코스 박스는 일정표에 합쳐졌으므로 숨긴다
+    const cb = $('#course-picks'); if (cb) { cb.hidden = true; cb.innerHTML = ''; }
+  })();
+
   // 달력 그리드: 여행 기간이 걸친 주(일~토)를 보여 주고, 여행일 칸에만 내용을 채운다.
   function calendarHTML(cellFn) {
     const start = new Date(d0); start.setDate(start.getDate() - start.getDay());
@@ -410,7 +474,7 @@
     $('#day').innerHTML = `<p class="dtitle">Day ${curDay + 1} · ${fmt(p.date)} <span class="tag" style="margin-left:6px">하루 예상 ${won(sum)}</span></p>
       <ul class="tl">${p.items.map(x => `<li><div class="item"><div class="time">${x.t}</div>
         <div class="row"><div><b><span class="tag">${x.k}</span>${esc(x.n)}</b>${x.m ? `<div class="meta">${esc(x.m)}</div>` : ''}</div>
-        <div class="cost">${x.c ? won(x.c) : '무료'}</div></div></div></li>`).join('')}</ul>`;
+        <div class="cost">${x.c == null ? '요금 확인' : x.c ? won(x.c) : '무료'}</div></div></div></li>`).join('')}</ul>`;
   }
   $('#days').addEventListener('click', e => { const b = e.target.closest('.cal-day'); if (!b) return; curDay = +b.dataset.i; renderDays(); });
   renderDays();

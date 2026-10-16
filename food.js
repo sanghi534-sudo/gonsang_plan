@@ -156,7 +156,8 @@
 
   function cardHTML(f) {
     const slots = slotsFor(f, ui.date, ui.meal);
-    const pickedKey = Object.keys(picks).find(k => picks[k].id === f.id && picks[k].date === ui.date);
+    const dest = ctx().dest;
+    const pickedKey = Object.keys(picks).find(k => picks[k].id === f.id && picks[k].date === ui.date && picks[k].dest === dest);
     const picked = pickedKey ? picks[pickedKey] : null;
     const badge = f.reservable ? (slots.length ? '<span class="fd-badge ok">예약 가능</span>' : '<span class="fd-badge">마감</span>') : '<span class="fd-badge wait">웨이팅</span>';
     const tags = [CATS[f.kind] + ' ' + f.kind, f.koMenu && '한국어 메뉴', f.vegan && '채식 가능', f.waitLow && '웨이팅 적음'].filter(Boolean);
@@ -179,7 +180,7 @@
     const c = ctx();
     if (!c.dest) { box.innerHTML = '<div class="fd-empty">상단에서 여행지를 선택하면 맛집을 보여드려요.</div>'; return; }
     if (foodsDest !== c.dest) { foods = loadFoods(c.dest); foodsDest = c.dest; }
-    const list = filtered(), pickList = Object.values(picks);
+    const list = filtered(), pickList = Object.values(picks).filter(p => p.dest === c.dest);
     const people = Math.max(1, (c.guests.adult || 0) + (c.guests.child || 0));
     const sum = pickList.reduce((a, p) => a + p.price, 0);
     box.innerHTML = `
@@ -197,7 +198,7 @@
   function syncBudget() {
     try { localStorage.setItem(PICKS, JSON.stringify(picks)); } catch (_) {}
     const B = window.TripBudget, c = ctx();
-    const list = Object.values(picks), people = Math.max(1, (c.guests.adult || 0) + (c.guests.child || 0));
+    const list = Object.values(picks).filter(p => p.dest === c.dest), people = Math.max(1, (c.guests.adult || 0) + (c.guests.child || 0));
     const sum = list.reduce((a, p) => a + p.price, 0) * people;
     if (B && typeof B.set === 'function') {
       try {
@@ -210,9 +211,9 @@
 
   function toggle(id, slot) {
     const f = foods.find(x => x.id === id); if (!f) return;
-    const key = `${ui.date}|${id}`, cur = picks[key];
+    const dest = ctx().dest, key = `${dest}|${ui.date}|${id}`, cur = picks[key];
     if (cur && (!slot || cur.slot === slot)) delete picks[key];
-    else picks[key] = { id, date: ui.date, name: f.name, price: f.price, slot: slot || '' };
+    else picks[key] = { id, dest, date: ui.date, meal: ui.meal, name: f.name, price: f.price, slot: slot || '' };
     syncBudget(); renderResults();
   }
 
@@ -226,7 +227,11 @@
     if (sort) { ui.sort = sort.dataset.s; renderResults(); return; }
     if (heart) { toggle(heart.dataset.id); return; }
     if (slot) { toggle(slot.dataset.id, slot.dataset.slot); return; }
-    if (t.closest('[data-clear]')) { picks = {}; syncBudget(); renderResults(); return; }
+    if (t.closest('[data-clear]')) {
+      const dest = ctx().dest;
+      Object.keys(picks).forEach(k => { if (picks[k].dest === dest) delete picks[k]; });
+      syncBudget(); renderResults(); return;
+    }
     // 조건 칩: 공통 코드가 상태를 갱신한 뒤 목록을 다시 그린다
     if (t.closest('.opts')) setTimeout(renderResults, 0);
   });

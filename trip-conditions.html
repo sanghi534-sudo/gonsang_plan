@@ -83,11 +83,13 @@
   /* 하단 영역: 탭 바는 화면 끝에서 끝까지, 본문(조회 결과)은 넓게 + 오른쪽 예산 */
   .plan{margin:0 0 80px;padding:0;display:grid;grid-template-columns:minmax(16px,1fr) minmax(0,1060px) 340px minmax(16px,1fr);align-items:start}
   .main-col{display:contents}
-  .tabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);background:var(--teal-d);margin-bottom:24px}
-  .tab{padding:18px 0 16px;background:none;border:0;border-bottom:4px solid transparent;color:rgba(255,255,255,.72);font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;gap:10px}
+  .tabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);background:#0f4435;margin-bottom:24px;padding-top:6px}
+  .tab{padding:18px 0 16px;background:none;border:0;border-bottom:4px solid transparent;border-radius:14px 14px 0 0;color:rgba(255,255,255,.6);font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;gap:10px}
   .tab i{font-style:normal;font-size:22px}
-  .tab:hover{color:#fff;background:rgba(255,255,255,.08)}
-  .tab.on{color:#fff;border-bottom-color:#fff}
+  .tab:hover{color:#fff;background:rgba(255,255,255,.1)}
+  /* 선택된 탭: 흰 탭이 바 위로 올라와 아래 본문과 이어져 보인다 / 선택 안 된 탭: 어두운 바 배경 */
+  .tab.on{color:var(--teal-d);background:#fff;border-bottom-color:var(--teal-d)}
+  .tab.on:hover{background:#fff}
   .panes{grid-column:2;border:1px solid var(--line);border-radius:20px;background:#fff}
   .aside{grid-column:3;margin-left:24px;position:sticky;top:16px;background:var(--gray);border-radius:20px;padding:24px 22px 26px}
   .pane{display:none;padding:22px 24px 28px}
@@ -413,7 +415,7 @@
   </div>
 
   <div class="pane" id="pane-tour">
-    <section id="travel-trends-root" aria-label="관광 추천과 네이버 검색 관심도"></section>
+    <section id="travel-trends-root" aria-label="관광 추천"></section>
     <section id="tour-reels-root" aria-label="여행지 릴스 테마와 일정에 담을 장소"></section>
     <!-- COURSE DEMO START: local planning with optional shared Wikimedia photos -->
     <style>
@@ -1490,8 +1492,6 @@ window.FOOD_TREND_DATA = null;
 
 </script>
 <!-- tour-reels-ui END -->
-<script src="travel-trends-data.js"></script>
-<script src="travel-trends.js"></script>
 <!-- FLIGHT DEMO DATA START: local fixtures only; budget.js is independent. -->
 <script id="flight-demo-data">
 /* Offline, deterministic flight fixtures. No availability or live fare claims. */
@@ -1970,7 +1970,6 @@ window.FOOD_TREND_DATA = null;
     renderSummary();
     // 예산 모듈에 읽기용 조건만 전달한다. 선택한 조건·항공·숙소 상태는 변경하지 않는다.
     window.TripBudget?.setContext({ dest: state.dest, guests: state.guests });
-    // 관광 검색 관심도는 조건을 읽기만 하며 기존 선택 요약은 변경하지 않는다.
     document.dispatchEvent(new CustomEvent('tripcontext:change'));
   }
 
@@ -2076,9 +2075,19 @@ window.FOOD_TREND_DATA = null;
     flight: { home:(air.from.match(/[A-Z]{3}/)||['SEL'])[0], type:air.type, reverse:air.reverse, cabin:(state.opts.airClass || ['일반석'])[0] }
   });
   const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  // 관광 코스: 최종 일정표에서 항목별 비용을 보여 줄 수 있도록 1인 참고 입장료(원)를 붙인다. 모르면 null.
+  const courseForSave = () => {
+    const course = window.TripCourse?.get() || null;
+    if (course && Array.isArray(course.days)) course.days.forEach(day => (day.items || []).forEach(p => {
+      if (!p || !p.id) return;
+      const f = window.TripCourse.feeFor?.(course.city, p.name);
+      p.feeKrw = f && Number.isFinite(f.krw) ? f.krw : null;
+    }));
+    return course;
+  };
   const saveConditions = () => {
     const data = { dest: state.dest, start: state.start && ymd(state.start),
-      end: state.end && ymd(state.end), guests: state.guests, flight: air, budget: window.TripBudget ? window.TripBudget.get() : null, stay: window.StayFilter ? window.StayFilter.get() : null, tour:window.TripTour?.get() || [], course:window.TripCourse?.get() || null, options: state.opts };
+      end: state.end && ymd(state.end), guests: state.guests, flight: air, budget: window.TripBudget ? window.TripBudget.get() : null, stay: window.StayFilter ? window.StayFilter.get() : null, tour:window.TripTour?.get() || [], course:courseForSave(), options: state.opts };
     try { localStorage.setItem('gonsang-trip-conditions', JSON.stringify(data)); } catch (_) {}
   };
   // 최종 일정 창: 저장한 조건을 trip-summary.html 이 읽어 일정·경비·체크리스트로 보여 준다
