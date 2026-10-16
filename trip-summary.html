@@ -16,7 +16,7 @@
   button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
 
   /* ===== 상단: trip-conditions 와 같은 헤더 + 읽기 전용 검색 필 ===== */
-  .top{background:#fff;border-bottom:1px solid var(--line);padding:20px 16px 28px}
+  .top{background:#fff;border-bottom:1px solid var(--line);padding:16px 16px 18px}
   .top-head{max-width:1100px;margin:0 auto 18px;display:flex;align-items:center;justify-content:space-between}
   .logo{display:inline-flex;align-items:center;flex-shrink:0}
   .brand-logo{display:block;width:210px;height:70px;object-fit:contain}
@@ -30,7 +30,7 @@
   .go:hover{background:var(--pink2)}
 
   /* ===== 하단: 트리플 스타일 (탭 바 · 본문 · 회색 사이드) ===== */
-  .plan{margin:0 0 80px;display:grid;grid-template-columns:minmax(16px,1fr) minmax(0,1060px) 340px minmax(16px,1fr);align-items:start}
+  .plan{margin:0 0 24px;display:grid;grid-template-columns:minmax(16px,1fr) minmax(0,1060px) 340px minmax(16px,1fr);align-items:start}
   .tabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);background:#0f4435;margin-bottom:24px;padding-top:6px}
   .tab{padding:18px 0 16px;border-bottom:4px solid transparent;border-radius:14px 14px 0 0;color:rgba(255,255,255,.6);font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;gap:10px}
   .tab i{font-style:normal;font-size:22px}
@@ -42,7 +42,7 @@
   .pane.on{display:block}
   .pane h3{margin:0 0 6px;font-size:17px}
   .lead{margin:0 0 16px;font-size:13px;color:var(--sub)}
-  .aside{grid-column:3;margin-left:24px;position:sticky;top:16px;background:var(--gray);border-radius:20px;padding:24px 22px 26px}
+  .aside{grid-column:3;margin-left:24px;position:sticky;top:16px;background:var(--gray);border-radius:20px;padding:20px 22px 20px}
   .aside h3{margin:0 0 4px;font-size:18px}
 
   /* 칩 (opt 와 동일) */
@@ -129,14 +129,14 @@
   .total{display:flex;justify-content:space-between;align-items:baseline;padding:14px 0 4px;font-weight:700}
   .total strong{font-size:22px;color:var(--teal-d)}
   .pp{font-size:13px;color:var(--sub);text-align:right}
-  .summary{padding-top:6px;margin-top:18px;border-top:1px solid var(--gray-d)}
-  .summary h3{margin:14px 0 10px;font-size:15px}
-  .summary dl{margin:0;display:grid;grid-template-columns:52px 1fr;gap:6px 10px;font-size:13px}
+  .summary{padding-top:2px;margin-top:12px;border-top:1px solid var(--gray-d)}
+  .summary h3{margin:10px 0 8px;font-size:15px}
+  .summary dl{margin:0;display:grid;grid-template-columns:52px 1fr;gap:4px 10px;font-size:13px}
   .summary dt{color:var(--sub)}
   .summary dd{margin:0;font-weight:600;word-break:keep-all}
-  .save{display:block;width:100%;margin-top:18px;padding:15px;border-radius:14px;background:var(--teal-d);color:#fff;font-weight:700;font-size:16px}
+  .save{display:block;width:100%;margin-top:14px;padding:12px;border-radius:14px;background:var(--teal-d);color:#fff;font-weight:700;font-size:16px}
   .save:hover{background:var(--pink2)}
-  .save.ghost{background:#fff;color:var(--teal-d);border:1px solid var(--gray-d);margin-top:10px}
+  .save.ghost{background:#fff;color:var(--teal-d);border:1px solid var(--gray-d);margin-top:8px}
 
   @media (max-width:760px){
     .brand-logo{width:174px;height:58px}
@@ -148,7 +148,67 @@
     .tab{font-size:15px;padding:14px 0 12px;gap:6px}
     .tab i{font-size:18px}
   }
-  @media print{.top .go,.tabs,.save,.opts{display:none}.pane{display:block!important}.aside{position:static}.plan{display:block}}
+  /* 일정표: 스크롤 없이 한 화면에 (달력이 화면 높이에 맞춰 늘어나고, 칸에 다 못 담은 항목은 '+N개 더'로 줄인다) */
+  #pane-day.on{display:flex;flex-direction:column;height:calc(100vh - 340px);min-height:440px;padding-bottom:18px}
+  #pane-day h3{margin:0 0 10px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .dp-hint,.dp-print{font-size:12px;font-weight:600;color:var(--sub)}
+  .dp-print{display:none}
+  #pane-day #days{flex:1;min-height:0;display:flex;flex-direction:column}
+  #pane-day .cal-scroll{flex:1;min-height:0;overflow:hidden;padding-bottom:0}
+  #pane-day .cal-grid{height:100%;min-width:0;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:auto;grid-auto-rows:minmax(0,1fr)}
+  #pane-day .cal-cell{min-height:0;overflow:hidden;display:flex;flex-direction:column}
+  #pane-day .cal-day{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+  #pane-day .cal-day .ev{flex:none}
+  #pane-day .cal-day .more{flex:none;margin-top:3px;font-size:11px;font-weight:800;color:var(--sub)}
+  .ev[hidden]{display:none}
+  #printDays{display:none}
+  .day-pop{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px}
+  .day-pop[hidden]{display:none}
+  .day-pop-box{position:relative;width:min(760px,100%);max-height:100%;overflow:auto;background:#fff;border-radius:20px;padding:22px 24px;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+  .day-pop-x{position:absolute;top:12px;right:14px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:#fff;font-size:15px}
+  .day-pop-x:hover{border-color:var(--teal-d);color:var(--teal-d)}
+  @media (max-width:760px){
+    #pane-day.on{height:auto}
+    #pane-day .cal-scroll{overflow-x:auto}
+    #pane-day .cal-grid{height:auto;min-width:700px}
+  }
+
+  /* 인쇄 / PDF 저장: 항목이 페이지 사이에서 잘리지 않도록 페이지를 나누고, 모든 날의 상세 일정을 함께 싣는다 */
+  @page{size:A4 landscape;margin:10mm}
+  @media print{
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{font-size:12px}
+    .top .go,.tabs,.save,.draft,.day-pop,.dp-hint,.seg2{display:none!important}
+    .top{padding:0 0 8px;border:0}
+    .top-head{margin-bottom:8px}
+    .search{flex-direction:row!important;height:auto!important;max-width:none;border-radius:14px!important;padding:2px 0}
+    .search .seg{padding:6px 18px!important;border-radius:0!important}
+    .plan{display:block;margin:0}
+    .panes{border:0;border-radius:0}
+    .pane,.pane.on{display:block!important;height:auto!important;min-height:0!important;padding:0 0 14px}
+    #pane-cost,#pane-ck,#pane-wx{break-before:page;page-break-before:always}
+    #pane-day .cal-scroll,.cal-scroll{overflow:visible!important}
+    #pane-day .cal-grid,.cal-grid{height:auto!important;min-width:0!important}
+    .cal-cell,#pane-day .cal-cell{overflow:visible!important;break-inside:avoid;page-break-inside:avoid;min-height:0}
+    #pane-day .cal-day{overflow:visible!important}
+    .ev{white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+    .dp-print{display:inline!important}
+    #printDays{display:grid!important;grid-template-columns:1fr 1fr;gap:10px 16px;break-before:page;page-break-before:always;margin-top:0}
+    .pday{break-inside:avoid;page-break-inside:avoid;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+    .pday .dtitle{margin-bottom:6px;break-after:avoid;page-break-after:avoid}
+    /* 상세 일정은 한 줄 압축형: 많은 날도 페이지 안에 들어가고, 넘치더라도 항목 사이에서만 나뉜다 */
+    .pday .tl{padding-left:0;border-left:0}
+    .pday .tl li{padding:0;break-inside:avoid;page-break-inside:avoid}
+    .pday .tl li::before{display:none}
+    .pday .item{display:flex;gap:8px;align-items:baseline;padding:3px 0;border:0;border-bottom:1px dashed var(--line);border-radius:0;box-shadow:none}
+    .pday .item .time{flex:none;width:38px;font-size:11px}
+    .pday .item .row{flex:1;margin:0}
+    .pday .item b{font-size:12px}
+    .pday .item .meta{font-size:10px;margin-top:1px}
+    .pday .item .cost{font-size:11px}
+    .item,.crow,.ck,.cgrp,.wx-card,.wx-tip{break-inside:avoid;page-break-inside:avoid}
+    .aside{position:static;margin:0;padding:12px 0 0;border-radius:0;background:#fff;break-inside:avoid}
+  }
 </style>
 </head>
 <body>
@@ -173,10 +233,9 @@
 
   <div class="panes">
     <div class="pane on" id="pane-day">
-      <h3>🗓 일자별 일정표</h3>
-      <p class="lead">확정한 항공·숙소·관광·맛집이 날짜 순서로 정리돼요.</p>
+      <h3>🗓 일자별 일정표 <small class="dp-hint">날짜를 누르면 하루 일정을 자세히 볼 수 있어요</small><small class="dp-print">일부 날짜는 "+N개 더"로 줄여 표시했어요 · 전체 일정은 다음 페이지에 있어요</small></h3>
       <div id="days"></div>
-      <div id="day"></div>
+      <div id="printDays" aria-label="일자별 상세 일정 (인쇄용)"></div>
       <section id="tour-picks" hidden aria-label="일정에 담은 관광 후보"></section>
       <section id="course-picks" hidden aria-label="관광 탭에서 만든 Day별 추천 코스"></section>
     </div>
@@ -217,6 +276,14 @@
     <button class="save ghost" id="close" type="button" hidden>닫고 조건 수정하기</button>
   </aside>
 </main>
+
+<!-- 하루 상세 일정 팝업: 일정표 화면은 스크롤 없이 한 화면에 두고, 자세한 내용은 여기서 본다 -->
+<div class="day-pop" id="dayPop" hidden>
+  <div class="day-pop-box" role="dialog" aria-modal="true" aria-label="하루 상세 일정">
+    <button class="day-pop-x" id="dayPopX" type="button" aria-label="닫기">✕</button>
+    <div id="day"></div>
+  </div>
+</div>
 
 <script>
 (() => {
@@ -450,6 +517,7 @@
     plan.forEach(p => p.items.sort((a, b) => toMin(a.t) - toMin(b.t)));
     // 같은 내용을 따로 보여 주던 관광 코스 박스는 일정표에 합쳐졌으므로 숨긴다
     const cb = $('#course-picks'); if (cb) { cb.hidden = true; cb.innerHTML = ''; }
+    if (replaced.has('관광')) { const tp = $('#tour-picks'); if (tp) { tp.hidden = true; tp.innerHTML = ''; } }
   })();
 
   // 달력 그리드: 여행 기간이 걸친 주(일~토)를 보여 주고, 여행일 칸에만 내용을 채운다.
@@ -470,16 +538,43 @@
     p.items.map(x => `<span class="ev k-${x.k}"><em>${x.t}</em>${esc(x.n)}</span>`).join('')}</button>`;
 
   let curDay = 0;
-  function renderDays() {
-    $('#days').innerHTML = calendarHTML(itineraryCell) + '<p class="cal-day-hint">날짜를 누르면 아래에 하루 일정이 자세히 나와요.</p>';
-    const p = plan[curDay];
+  const dayDetailHTML = i => {
+    const p = plan[i];
     const sum = p.items.reduce((a, x) => a + (x.c || 0), 0);
-    $('#day').innerHTML = `<p class="dtitle">Day ${curDay + 1} · ${fmt(p.date)} <span class="tag" style="margin-left:6px">하루 예상 ${won(sum)}</span></p>
+    return `<p class="dtitle">Day ${i + 1} · ${fmt(p.date)} <span class="tag" style="margin-left:6px">하루 예상 ${won(sum)}</span></p>
       <ul class="tl">${p.items.map(x => `<li><div class="item"><div class="time">${x.t}</div>
         <div class="row"><div><b><span class="tag">${x.k}</span>${esc(x.n)}</b>${x.m ? `<div class="meta">${esc(x.m)}</div>` : ''}</div>
         <div class="cost">${x.c == null ? '요금 확인' : x.c ? won(x.c) : '무료'}</div></div></div></li>`).join('')}</ul>`;
+  };
+  // 칸 높이에 다 들어가지 않는 항목은 숨기고 '+N개 더'로 표시한다 (전체 내용은 날짜 팝업과 인쇄물에 있다)
+  function fitCells() {
+    $$('#days .cal-day').forEach(btn => {
+      const evs = [...btn.querySelectorAll('.ev')];
+      evs.forEach(e => { e.hidden = false; });
+      const old = btn.querySelector('.more'); if (old) old.remove();
+      let hidden = 0, more = null;
+      while (hidden < evs.length && btn.scrollHeight > btn.clientHeight + 1) {
+        evs[evs.length - 1 - hidden].hidden = true; hidden++;
+        if (!more) { more = document.createElement('span'); more.className = 'more'; btn.appendChild(more); }
+        more.textContent = `+${hidden}개 더`;
+      }
+    });
   }
-  $('#days').addEventListener('click', e => { const b = e.target.closest('.cal-day'); if (!b) return; curDay = +b.dataset.i; renderDays(); });
+  function renderDays() {
+    $('#days').innerHTML = calendarHTML(itineraryCell);
+    $('#printDays').innerHTML = plan.map((p, i) => `<section class="pday">${dayDetailHTML(i)}</section>`).join('');
+    fitCells();
+  }
+  const dayPop = $('#dayPop'), closePop = () => { dayPop.hidden = true; };
+  $('#days').addEventListener('click', e => {
+    const b = e.target.closest('.cal-day'); if (!b) return;
+    curDay = +b.dataset.i; renderDays();
+    $('#day').innerHTML = dayDetailHTML(curDay); dayPop.hidden = false;
+  });
+  $('#dayPopX').addEventListener('click', closePop);
+  dayPop.addEventListener('click', e => { if (e.target === dayPop) closePop(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePop(); });
+  window.addEventListener('resize', fitCells);
   renderDays();
 
   /* ---------- 경비 ---------- */
@@ -655,14 +750,14 @@
 
   $('#wxCity').textContent = dest;
   $('#wxLead').textContent = `${fmt(d0)} ~ ${fmt(d1)} 날씨`;
-  let wxStarted = false;
+  let wxPromise = null;
   function startWeather() {
-    if (wxStarted) return;
-    wxStarted = true;
-    loadWeather().then(renderWeather).catch(err => {
-      wxStarted = false;
+    if (wxPromise) return wxPromise;
+    wxPromise = loadWeather().then(renderWeather).catch(err => {
+      wxPromise = null;
       $('#wxBody').innerHTML = `<div class="wx-state">날씨를 불러오지 못했어요.<br>${esc(err.message || '')}<br>네트워크를 확인하고 이 탭을 다시 열어 주세요.</div>`;
     });
+    return wxPromise;
   }
 
   /* ---------- 탭 · 기타 ---------- */
@@ -671,8 +766,27 @@
     $$('.tab').forEach(x => x.classList.toggle('on', x === t));
     $$('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + t.dataset.t));
     if (t.dataset.t === 'wx') startWeather();
+    if (t.dataset.t === 'day') setTimeout(fitCells, 0);
   });
-  $('#print').addEventListener('click', () => window.print());
+  // PDF 저장: 날씨 탭을 열어 보지 않았어도 인쇄물에 날씨가 빠지지 않게 먼저 불러온다 (최대 6초)
+  $('#print').addEventListener('click', async () => {
+    const btn = $('#print'), label = btn.textContent;
+    btn.disabled = true; btn.textContent = '날씨 불러오는 중…';
+    try { await Promise.race([startWeather(), new Promise(r => setTimeout(r, 6000))]); } catch (_) {}
+    btn.disabled = false; btn.textContent = label;
+    window.print();
+  });
+  // 인쇄 직전: 달력 칸은 화면 크기와 무관하게 6개까지만 보여 주고 나머지는 '+N개 더'로 줄인다 (전체는 상세 일정 페이지에 있음)
+  window.addEventListener('beforeprint', () => {
+    $$('#days .cal-day').forEach(btn => {
+      const evs = [...btn.querySelectorAll('.ev')], extra = Math.max(0, evs.length - 6);
+      evs.forEach((e, i) => { e.hidden = i >= 6; });
+      const old = btn.querySelector('.more'); if (old) old.remove();
+      if (extra) { const m = document.createElement('span'); m.className = 'more'; m.textContent = `+${extra}개 더`; btn.appendChild(m); }
+    });
+    startWeather();
+  });
+  window.addEventListener('afterprint', fitCells);
   // 창(iframe) 안에서 열렸을 때: 닫기 버튼으로 부모 창을 닫는다
   if (window.parent !== window) {
     const c = $('#close'); c.hidden = false;
