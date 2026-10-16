@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>여행 최종 정리</title>
+<style>
+  :root{
+    --bg:#fff; --ink:#222; --sub:#717171; --line:#ddd; --soft:#f7f7f7; --soft2:#ebebeb;
+    --teal:#1d735a; --teal-d:#1d735a; --pink2:#155a46; --teal-soft:#e4f3ed;
+    --gray:#f0f1f0; --gray-d:#dfe2e0; --warn:#b3541e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",sans-serif;color:var(--ink);background:var(--bg)}
+  button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+
+  /* ===== 상단: trip-conditions 와 같은 헤더 + 읽기 전용 검색 필 ===== */
+  .top{background:#fff;border-bottom:1px solid var(--line);padding:20px 16px 28px}
+  .top-head{max-width:1100px;margin:0 auto 18px;display:flex;align-items:center;justify-content:space-between}
+  .logo{font-weight:800;color:var(--teal);font-size:22px;letter-spacing:-.5px}
+  .draft{font-size:12px;color:var(--warn);font-weight:700}
+  .search{max-width:860px;margin:0 auto;display:flex;align-items:stretch;background:var(--soft2);border:1px solid var(--line);border-radius:999px;height:68px}
+  .seg{flex:1;padding:0 28px;border-radius:999px;display:flex;flex-direction:column;justify-content:center;min-width:0}
+  .seg small{font-size:12px;font-weight:700}
+  .seg span{font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .go{display:flex;align-items:center;gap:6px;background:var(--teal);color:#fff;font-weight:700;border-radius:999px;margin:8px;padding:0 22px;text-decoration:none;font-size:14px}
+  .go:hover{background:var(--pink2)}
+
+  /* ===== 하단: 트리플 스타일 (탭 바 · 본문 · 회색 사이드) ===== */
+  .plan{margin:0 0 80px;display:grid;grid-template-columns:minmax(16px,1fr) minmax(0,1060px) 340px minmax(16px,1fr);align-items:start}
+  .tabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);background:var(--teal-d);margin-bottom:24px}
+  .tab{padding:18px 0 16px;border-bottom:4px solid transparent;color:rgba(255,255,255,.72);font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;gap:10px}
+  .tab i{font-style:normal;font-size:22px}
+  .tab:hover{color:#fff;background:rgba(255,255,255,.08)}
+  .tab.on{color:#fff;border-bottom-color:#fff}
+  .panes{grid-column:2;border:1px solid var(--line);border-radius:20px;background:#fff}
+  .pane{display:none;padding:22px 24px 28px}
+  .pane.on{display:block}
+  .pane h3{margin:0 0 6px;font-size:17px}
+  .lead{margin:0 0 16px;font-size:13px;color:var(--sub)}
+  .aside{grid-column:3;margin-left:24px;position:sticky;top:16px;background:var(--gray);border-radius:20px;padding:24px 22px 26px}
+  .aside h3{margin:0 0 4px;font-size:18px}
+
+  /* 칩 (opt 와 동일) */
+  .opts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .opt{padding:10px 16px;border-radius:999px;border:1px solid var(--line);font-size:14px;font-weight:600;background:#fff}
+  .opt:hover{border-color:var(--teal-d)}
+  .opt.on{background:var(--teal-soft);border-color:var(--teal-d);color:var(--teal-d)}
+
+  /* 타임라인 */
+  .dtitle{font-weight:800;font-size:16px;margin:0 0 14px}
+  .tl{list-style:none;margin:0;padding:0 0 0 20px;border-left:2px solid var(--teal-soft)}
+  .tl li{position:relative;padding:0 0 12px 18px}
+  .tl li::before{content:"";position:absolute;left:-27px;top:16px;width:12px;height:12px;border-radius:50%;background:var(--teal)}
+  .item{border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+  .item .time{font-size:12px;font-weight:700;color:var(--teal)}
+  .item .row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-top:2px}
+  .item b{font-size:15px}
+  .meta{font-size:13px;color:var(--sub);margin-top:3px}
+  .cost{font-size:14px;font-weight:800;white-space:nowrap}
+  .tag{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--teal-soft);color:var(--teal-d);margin-right:6px}
+
+  /* 경비 */
+  .crow{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 4px;border-bottom:1px solid var(--soft2);font-size:15px;font-weight:700}
+  .crow:last-of-type{border-bottom:0}
+  .crow .l{flex:1;min-width:0}
+  .crow small{display:block;color:var(--warn);font-size:11px;font-weight:600;margin-top:2px}
+  .crow small.ok{color:var(--teal-d)}
+  .bar{height:6px;background:var(--soft2);border-radius:6px;margin-top:8px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--teal-d)}
+  .note{font-size:12px;color:var(--sub);line-height:1.6;margin:14px 0 0}
+
+  /* 체크리스트 */
+  .prog{height:8px;background:var(--soft2);border-radius:8px;overflow:hidden;margin:6px 0 18px}
+  .prog i{display:block;height:100%;background:var(--teal-d);width:0;transition:width .2s}
+  .cgrp{margin-bottom:18px}
+  .cgrp h4{margin:0 0 8px;font-size:12px;font-weight:800;color:var(--teal-d)}
+  .ck{display:flex;gap:12px;align-items:flex-start;padding:13px 14px;border:1px solid var(--line);border-radius:14px;margin-bottom:8px;cursor:pointer}
+  .ck:hover{border-color:var(--teal-d)}
+  .ck input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--teal-d);flex:none}
+  .ck .t{font-weight:700;font-size:14px}
+  .ck .d{font-size:12px;color:var(--sub);margin-top:2px;line-height:1.5}
+  .ck.done{background:var(--teal-soft);border-color:var(--teal-soft)}
+  .ck.done .t{text-decoration:line-through;color:#6f9a8b}
+
+  /* 사이드 */
+  .seg2{display:flex;border:1px solid #cfd3d1;border-radius:999px;background:#fff;overflow:hidden;width:max-content;margin:10px 0 4px}
+  .seg2 button{padding:6px 14px;font-size:12px;font-weight:700;color:var(--sub)}
+  .seg2 button.on{background:var(--teal-d);color:#fff}
+  .total{display:flex;justify-content:space-between;align-items:baseline;padding:14px 0 4px;font-weight:700}
+  .total strong{font-size:22px;color:var(--teal-d)}
+  .pp{font-size:13px;color:var(--sub);text-align:right}
+  .summary{padding-top:6px;margin-top:18px;border-top:1px solid var(--gray-d)}
+  .summary h3{margin:14px 0 10px;font-size:15px}
+  .summary dl{margin:0;display:grid;grid-template-columns:52px 1fr;gap:6px 10px;font-size:13px}
+  .summary dt{color:var(--sub)}
+  .summary dd{margin:0;font-weight:600;word-break:keep-all}
+  .save{display:block;width:100%;margin-top:18px;padding:15px;border-radius:14px;background:var(--teal-d);color:#fff;font-weight:700;font-size:16px}
+  .save:hover{background:var(--pink2)}
+  .save.ghost{background:#fff;color:var(--teal-d);border:1px solid var(--gray-d);margin-top:10px}
+
+  @media (max-width:760px){
+    .search{flex-direction:column;border-radius:24px;height:auto}
+    .seg{padding:12px 20px;border-radius:24px}
+    .go{margin:8px;padding:14px;justify-content:center}
+    .plan{grid-template-columns:16px minmax(0,1fr) 16px}
+    .aside{grid-column:2;margin:20px 0 0;position:static}
+    .tab{font-size:15px;padding:14px 0 12px;gap:6px}
+    .tab i{font-size:18px}
+  }
+  @media print{.top .go,.tabs,.save,.opts{display:none}.pane{display:block!important}.aside{position:static}.plan{display:block}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-head"><span class="logo">곤상플랜</span><span class="draft" id="draft"></span></div>
+  <div class="search" aria-label="여행 조건 요약">
+    <div class="seg"><small>여행지</small><span id="sDest"></span></div>
+    <div class="seg"><small>날짜</small><span id="sDate"></span></div>
+    <div class="seg"><small>여행자</small><span id="sGuest"></span></div>
+    <a class="go" id="edit" href="trip-conditions.html" target="_top">✎ 조건 수정</a>
+  </div>
+</header>
+
+<main class="plan">
+  <nav class="tabs" id="tabs">
+    <button class="tab on" data-t="day" type="button"><i>🗓</i>일정표</button>
+    <button class="tab" data-t="cost" type="button"><i>💰</i>예상 경비</button>
+    <button class="tab" data-t="ck" type="button"><i>✅</i>준비 체크리스트</button>
+  </nav>
+
+  <div class="panes">
+    <div class="pane on" id="pane-day">
+      <h3>🗓 일자별 일정표</h3>
+      <p class="lead">확정한 항공·숙소·관광·맛집이 날짜 순서로 정리돼요.</p>
+      <div class="opts" id="days"></div>
+      <div id="day"></div>
+    </div>
+
+    <div class="pane" id="pane-cost">
+      <h3>💰 예상 경비</h3>
+      <p class="lead">확정한 금액은 그대로, 나머지는 일정표의 항목별 예상치를 합산했어요.</p>
+      <div id="costs"></div>
+      <p class="note" id="costnote"></p>
+    </div>
+
+    <div class="pane" id="pane-ck">
+      <h3>✅ <span id="ckCountry"></span> 출국 준비 체크리스트</h3>
+      <p class="lead" id="ckLead"></p>
+      <div class="prog"><i id="ckBar"></i></div>
+      <div id="checklist"></div>
+      <p class="note">입국 요건과 규정은 자주 바뀝니다. 출국 전 외교부 해외안전여행(0404.go.kr)과 해당 국가 공식 사이트에서 최신 내용을 꼭 확인하세요.</p>
+    </div>
+  </div>
+
+  <aside class="aside">
+    <h3>총 예상 경비</h3>
+    <div class="seg2" id="cur"><button class="on" data-c="KRW" type="button">원화</button><button data-c="LOCAL" type="button"></button></div>
+    <div class="total"><span>합계</span><strong id="total"></strong></div>
+    <div class="pp" id="pp"></div>
+    <section class="summary">
+      <h3>여행 요약</h3>
+      <dl id="summary"></dl>
+    </section>
+    <button class="save" id="print" type="button">PDF로 저장 / 인쇄</button>
+    <button class="save ghost" id="close" type="button" hidden>닫고 조건 수정하기</button>
+  </aside>
+</main>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const DOW = ['일','월','화','수','목','금','토'];
+  const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  /* ---------- 국가·도시 참고 데이터 (초안용 · 출국 전 공식 확인 필요) ---------- */
+  const COUNTRY = {
+    일본: { cur:['JPY','엔',9.2], volt:'100V · A/B형 플러그', lang:'일본어', tz:'한국과 시차 없음',
+      docs:[['여권 유효기간 확인','체류 기간 이상 남아 있는지 확인하세요. 한국 여권은 90일 이내 단기 방문 시 비자가 필요 없어요.'],
+            ['Visit Japan Web 등록','입국 심사·세관 신고 정보를 미리 등록해 QR을 받아 두면 입국이 빨라져요.']],
+      money:[['엔화 환전 또는 해외결제 카드','교통카드(스이카·이코카)와 소액 현금 결제처가 아직 많아요.']],
+      misc:[['플러그 어댑터 (A형)','한국 220V 가전은 변압 기능 여부를 확인하세요.'],['일본 로밍/eSIM','지하철·역 안에서는 지도 앱이 필수예요.']] },
+    태국: { cur:['THB','바트',40], volt:'220V · A/B/C형 혼용', lang:'태국어', tz:'한국보다 2시간 느림',
+      docs:[['여권 유효기간 확인','입국 시 6개월 이상 남아 있는 것이 안전해요.'],['TDAC(태국 디지털 입국카드) 작성','입국 전 온라인으로 제출합니다. 제출 가능 시점은 공식 사이트에서 확인하세요.'],['무비자 체류 가능 일수 확인','체류 일수 규정이 바뀔 수 있어 출국 전 확인이 필요해요.']],
+      money:[['바트 환전','시내 환전소 시세가 공항보다 좋은 편이에요.']],
+      misc:[['모기 기피제·자외선 차단제','우기에는 우산·우비도 챙기세요.'],['사원 방문용 복장','어깨와 무릎을 가리는 옷이 필요해요.']] },
+    베트남: { cur:['VND','동',0.054], volt:'220V · A/C형', lang:'베트남어', tz:'한국보다 2시간 느림',
+      docs:[['여권 유효기간 확인','입국일 기준 6개월 이상 남아 있는지 확인하세요.'],['무비자 체류(최대 45일) 조건 확인','귀국 항공권 소지 등 요건을 공식 안내로 확인하세요.']],
+      money:[['달러 소액 환전 후 현지 환전','동화는 단위가 커서 지불할 때 헷갈리기 쉬워요.']],
+      misc:[['그랩(Grab) 앱 설치','택시 바가지 방지와 이동에 유용해요.'],['상비약·모기 기피제','']] },
+    대만: { cur:['TWD','대만달러',43], volt:'110V · A형', lang:'중국어(번체)', tz:'한국보다 1시간 느림',
+      docs:[['여권 유효기간 확인','입국일 기준 6개월 이상 남아 있는 것이 안전해요.'],['온라인 입국신고서 작성','출발 전 온라인 제출이 가능한지 확인하세요.']],
+      money:[['대만달러 환전','이지카드(교통카드) 충전 시 현금이 필요해요.']],
+      misc:[['110V 가전 확인','한국 가전이 110V를 지원하는지 확인하세요.']] },
+    프랑스: { cur:['EUR','유로',1500], volt:'230V · C/E형', lang:'프랑스어', tz:'한국보다 7~8시간 느림(서머타임)',
+      docs:[['여권 유효기간 확인','출국 예정일 기준 3개월 이상 남아 있어야 해요(셍겐 규정).'],['ETIAS 시행 여부 확인','셍겐 무비자 국가 대상 사전 인증 제도입니다. 시행 시점을 공식 사이트에서 확인하세요.'],['여행자 보험 가입','의료비가 높아 가입을 권장해요.']],
+      money:[['유로 환전 / 해외결제 카드','소매치기 대비 현금은 분산 보관하세요.']],
+      misc:[['플러그 어댑터 (C형)',''],['박물관·명소 사전 예약','인기 시설은 시간 지정 티켓이 필수예요.']] }
+  };
+  const CITY2COUNTRY = { 도쿄:'일본',오사카:'일본',교토:'일본',후쿠오카:'일본',방콕:'태국',다낭:'베트남',타이베이:'대만',파리:'프랑스' };
+  const COMMON = [
+    ['항공권·숙소 예약 확인서 보관','e-티켓과 숙소 바우처를 오프라인에서도 볼 수 있게 저장하세요.'],
+    ['해외여행자 보험 가입','출국 전에 가입해야 하고, 보장 범위를 확인하세요.'],
+    ['로밍 / eSIM / 포켓와이파이 선택',''],
+    ['해외결제 카드 한도·해외 사용 설정 확인','']
+  ];
+
+  /* ---------- 입력: trip-conditions 의 저장값, 없으면 예시 ---------- */
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem('gonsang-trip-conditions') || 'null'); } catch (_) {}
+  const sample = !(saved && saved.dest && saved.start && saved.end);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const d0 = sample ? new Date(today.getTime() + 30 * 864e5) : new Date(saved.start + 'T00:00:00');
+  const d1 = sample ? new Date(d0.getTime() + 3 * 864e5) : new Date(saved.end + 'T00:00:00');
+  const dest = sample ? '도쿄' : saved.dest;
+  const g = sample ? { adult: 2, child: 0, infant: 0 } : saved.guests || { adult: 1 };
+  const people = Math.max(1, (g.adult || 0) + (g.child || 0));
+  const nights = Math.max(1, Math.round((d1 - d0) / 864e5));
+  const country = CITY2COUNTRY[dest] || '';
+  const info = COUNTRY[country] || null;
+  const cur = info ? info.cur : null;
+  const bud = (saved && saved.budget) || {};
+  const fixed = k => bud[k] && Number.isFinite(bud[k].krw) ? bud[k].krw : null;
+
+  /* ---------- 상단 · 사이드 요약 ---------- */
+  const fmt = d => `${d.getMonth() + 1}/${d.getDate()}(${DOW[d.getDay()]})`;
+  const guestText = `게스트 ${(g.adult || 0) + (g.child || 0)}명${g.infant ? ', 유아 ' + g.infant + '명' : ''}`;
+  $('#sDest').textContent = `${dest} · ${nights}박 ${nights + 1}일`;
+  $('#sDate').textContent = `${fmt(d0)} - ${fmt(d1)}`;
+  $('#sGuest').textContent = guestText;
+  $('#draft').textContent = sample ? '초안 · 예시 데이터' : '초안 · 일정 내용은 예시';
+  $('#summary').innerHTML = [['여행지', dest], ['날짜', `${fmt(d0)} ~ ${fmt(d1)} (${nights}박)`], ['여행자', guestText],
+    ['항공', fixed('air') != null ? '확정' : '미정'], ['숙소', fixed('stay') != null ? '확정' : '미정'],
+    ['관광', fixed('tour') != null ? '확정' : '미정'], ['맛집', fixed('food') != null ? '확정' : '미정']]
+    .map(r => `<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join('');
+
+  /* ---------- 일정 (초안: 선택 데이터가 연결되기 전까지 예시) ---------- */
+  const plan = [];
+  const nDays = nights + 1;
+  const half = k => fixed(k) != null ? fixed(k) / 2 : 220000;
+  for (let i = 0; i < nDays; i++) {
+    const date = new Date(d0.getTime() + i * 864e5);
+    const items = [];
+    if (i === 0) {
+      items.push({t:'08:30',k:'항공',n:`인천 → ${dest} 출발편`,m:'탑승 2시간 전 공항 도착 권장',c:half('air')});
+      items.push({t:'13:00',k:'숙소',n:'숙소 체크인 · 짐 맡기기',m:'체크인 시간 전이면 짐만 먼저 맡겨요',c:0});
+      items.push({t:'14:30',k:'맛집',n:'현지 점심 · 라멘/덮밥',m:'숙소 도보 10분',c:15000});
+      items.push({t:'16:30',k:'관광',n:'동네 산책 · 시장 구경',m:'첫날은 가볍게',c:0});
+      items.push({t:'19:00',k:'맛집',n:'저녁 · 이자카야',m:'예약 가능 매장',c:35000});
+    } else if (i === nDays - 1) {
+      items.push({t:'09:00',k:'숙소',n:'체크아웃',m:'',c:0});
+      items.push({t:'10:30',k:'맛집',n:'브런치 · 카페',m:'',c:18000});
+      items.push({t:'12:30',k:'관광',n:'기념품 쇼핑',m:'택스리펀을 위해 여권 지참',c:60000});
+      items.push({t:'16:00',k:'항공',n:`${dest} → 인천 귀국편`,m:'공항 도착 2시간 전',c:half('air')});
+    } else {
+      items.push({t:'09:30',k:'관광',n:`관광 명소 ${i}`,m:'입장권 사전 예약 권장',c:20000});
+      items.push({t:'12:30',k:'맛집',n:'점심 · 현지 맛집',m:'웨이팅 적은 시간대',c:20000});
+      items.push({t:'15:00',k:'관광',n:`관광 명소 ${i + 1}`,m:'대중교통 이동',c:15000});
+      items.push({t:'19:00',k:'맛집',n:'저녁 · 현지 맛집',m:'',c:40000});
+    }
+    plan.push({ date, items });
+  }
+
+  let curDay = 0;
+  function renderDays() {
+    $('#days').innerHTML = plan.map((p, i) => `<button class="opt${i === curDay ? ' on' : ''}" data-i="${i}" type="button">Day ${i + 1} · ${fmt(p.date)}</button>`).join('');
+    const p = plan[curDay];
+    const sum = p.items.reduce((a, x) => a + (x.c || 0), 0);
+    $('#day').innerHTML = `<p class="dtitle">Day ${curDay + 1} · ${fmt(p.date)} <span class="tag" style="margin-left:6px">하루 예상 ${won(sum)}</span></p>
+      <ul class="tl">${p.items.map(x => `<li><div class="item"><div class="time">${x.t}</div>
+        <div class="row"><div><b><span class="tag">${x.k}</span>${esc(x.n)}</b>${x.m ? `<div class="meta">${esc(x.m)}</div>` : ''}</div>
+        <div class="cost">${x.c ? won(x.c) : '무료'}</div></div></div></li>`).join('')}</ul>`;
+  }
+  $('#days').addEventListener('click', e => { const b = e.target.closest('.opt'); if (!b) return; curDay = +b.dataset.i; renderDays(); });
+  renderDays();
+
+  /* ---------- 경비 ---------- */
+  const sumKind = k => plan.reduce((a, p) => a + p.items.filter(x => x.k === k).reduce((s, x) => s + (x.c || 0), 0), 0);
+  const rows = [
+    ['✈ 항공', fixed('air') != null ? fixed('air') : sumKind('항공') * people, fixed('air') != null],
+    ['🏨 숙소', fixed('stay') != null ? fixed('stay') : 130000 * nights, fixed('stay') != null],
+    ['📍 관광', fixed('tour') != null ? fixed('tour') : sumKind('관광') * people, fixed('tour') != null],
+    ['🍽 맛집', fixed('food') != null ? fixed('food') : sumKind('맛집') * people, fixed('food') != null],
+    ['🚇 교통·기타', 15000 * nDays * people, false]
+  ];
+  const sum = rows.reduce((a, r) => a + r[1], 0);
+  const lc = cur ? cur[2] : null;
+  let mode = 'KRW';
+  const show = n => mode === 'KRW' || !lc ? won(n) : `${Math.round(n / lc).toLocaleString('ko-KR')}${cur[1]}`;
+  function renderCost() {
+    $('#costs').innerHTML = rows.map(r => `<div class="crow"><div class="l">${r[0]}<small class="${r[2] ? 'ok' : ''}">${r[2] ? '확정 금액' : '예상치'}</small>
+      <div class="bar"><i style="width:${sum ? Math.round(r[1] / sum * 100) : 0}%"></i></div></div><span>${show(r[1])}</span></div>`).join('');
+    $('#total').textContent = show(sum);
+    $('#pp').textContent = `1인당 약 ${show(sum / people)} (${people}명 기준)`;
+    $('#costnote').innerHTML = (lc ? `참고 환율 1${cur[1]} ≈ ${lc}원 (고정 예시값 · 실제 환율은 예산 패널 기준)<br>` : '') +
+      '항공·숙소·관광·맛집은 각 탭에서 확정한 금액을 우선 사용해요.';
+  }
+  const lb = $('#cur button[data-c="LOCAL"]');
+  if (lc) lb.textContent = cur[0]; else lb.style.display = 'none';
+  $('#cur').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    mode = b.dataset.c === 'LOCAL' ? 'LOCAL' : 'KRW';
+    $$('#cur button').forEach(x => x.classList.toggle('on', x === b));
+    renderCost();
+  });
+  renderCost();
+
+  /* ---------- 체크리스트 ---------- */
+  $('#ckCountry').textContent = country || dest;
+  const groups = [['서류 · 입국', info ? info.docs : []], ['돈 · 결제', info ? info.money : []], ['통신 · 전자기기 · 짐', info ? info.misc : []], ['공통 준비', COMMON]];
+  const KEY = `gonsang-checklist-${dest}`;
+  let done = {};
+  try { done = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (_) {}
+  $('#ckLead').textContent = info ? `전압 ${info.volt} · 언어 ${info.lang} · 시차 ${info.tz}` : '이 여행지의 국가별 정보는 아직 준비 중이라 공통 항목만 보여드려요.';
+  function renderCk() {
+    let all = 0, ok = 0;
+    $('#checklist').innerHTML = groups.filter(gr => gr[1].length).map(([name, list]) =>
+      `<div class="cgrp"><h4>${name}</h4>${list.map(([t, d]) => {
+        const id = name + '|' + t; all++; if (done[id]) ok++;
+        return `<label class="ck${done[id] ? ' done' : ''}"><input type="checkbox" data-id="${esc(id)}"${done[id] ? ' checked' : ''}>
+          <span><div class="t">${esc(t)}</div>${d ? `<div class="d">${esc(d)}</div>` : ''}</span></label>`;
+      }).join('')}</div>`).join('');
+    $('#ckBar').style.width = all ? Math.round(ok / all * 100) + '%' : '0';
+  }
+  $('#checklist').addEventListener('change', e => {
+    const c = e.target.closest('input[type=checkbox]'); if (!c) return;
+    done[c.dataset.id] = c.checked;
+    try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (_) {}
+    renderCk();
+  });
+  renderCk();
+
+  /* ---------- 탭 · 기타 ---------- */
+  $('#tabs').addEventListener('click', e => {
+    const t = e.target.closest('.tab'); if (!t) return;
+    $$('.tab').forEach(x => x.classList.toggle('on', x === t));
+    $$('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + t.dataset.t));
+  });
+  $('#print').addEventListener('click', () => window.print());
+  // 창(iframe) 안에서 열렸을 때: 닫기 버튼으로 부모 창을 닫는다
+  if (window.parent !== window) {
+    const c = $('#close'); c.hidden = false;
+    c.addEventListener('click', () => parent.postMessage({ type: 'trip-summary:close' }, location.origin));
+    $('#edit').addEventListener('click', e => { e.preventDefault(); parent.postMessage({ type: 'trip-summary:close' }, location.origin); });
+  }
+})();
+</script>
+</body>
+</html>
