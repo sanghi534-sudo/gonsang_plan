@@ -32,9 +32,23 @@
     '리마': `미라플로레스 해안 산책로|Miraflores District, Lima|산책;라르코 박물관|Larco Museum|박물관;우아카 푸크야나|Huaca Pucllana|역사;리마 아르마스 광장|Plaza Mayor, Lima|역사;바랑코|Barranco District|산책;산프란시스코 수도원|Basilica and Convent of San Francisco, Lima|역사;매직 워터 서킷|Park of the Reserve|체험;라르코마르|Larcomar|쇼핑;리마 대성당|Cathedral of Lima|역사;아모르 공원|Parque del Amor|자연`
   };
   const descriptions = {전망:'전망을 즐기며 도시와 주변 풍경을 한눈에 담아보세요.',역사:'건축과 유적을 통해 이 지역의 역사를 만나는 코스예요.',자연:'물가와 녹지에서 풍경을 즐기는 야외 여행 후보예요.',박물관:'예술·역사·문화를 실내에서 둘러보는 방문 후보예요.',쇼핑:'상점과 시장을 구경하며 여행의 기념품을 찾아보세요.',산책:'주변 골목과 풍경을 천천히 둘러보기 좋은 코스예요.',명소:'도시를 대표하는 건축과 풍경을 만나보세요.',체험:'관람과 액티비티를 함께 계획해볼 수 있는 장소예요.',테마파크:'놀이시설과 공연을 즐기는 하루 코스로 살펴보세요.'};
+  const details={
+    '케이프타운':{
+      '테이블 마운틴':'도시와 바다를 내려다보는 전망 코스예요. 날씨와 케이블카 운행 여부를 확인하고 시간을 여유 있게 잡으세요.',
+      '볼더스 비치':'펭귄과 해안 풍경을 살펴보는 자연 코스예요. 관람 구역과 해변 이용 구역을 구분해 계획하세요.',
+      '케이프 포인트':'해안과 절벽 풍경을 만나는 외곽 코스예요. 도심에서의 이동 시간을 넉넉히 잡으세요.',
+      'V&A 워터프런트':'항구 산책에 쇼핑과 식사를 함께 묶어보세요. 기념품 예산은 입장료와 별도로 준비하세요.',
+      '커스텐보쉬 식물원':'식물과 산자락 풍경을 천천히 즐기는 코스예요. 걷는 거리와 휴식 시간을 함께 정해보세요.',
+      '로벤섬':'섬의 역사와 이야기를 살펴보는 방문 후보예요. 투어 예약과 배편 운항 여부를 먼저 확인하세요.',
+      '보캅':'색채가 인상적인 거리와 지역 문화를 둘러보는 산책 코스예요. 주민의 일상을 존중하며 촬영하세요.',
+      '라이언스 헤드':'도심 주변 풍경을 즐기는 야외 코스예요. 체력·날씨·현지 안전 안내에 맞춰 방문을 결정하세요.',
+      '자이츠 현대미술관':'현대미술 감상을 일정에 넣어보세요. 전시와 입장 조건은 공식 안내에서 확인하세요.',
+      '캠프스 베이':'해변 주변을 산책하며 쉬어가는 코스로 담아보세요. 교통과 귀가 시간을 미리 정해두세요.'
+    }
+  };
   window.GonsangTourCatalog = Object.freeze(Object.fromEntries(Object.entries(raw).map(([city,text])=>[city,Object.freeze(text.split(';').map((line,index)=>{
     const [name,wiki,category]=line.split('|');
-    return Object.freeze({id:`${city}:${index}`,city,name,wiki,category,description:descriptions[category],order:index});
+    return Object.freeze({id:`${city}:${index}`,city,name,wiki,category,description:details[city]?.[name]||descriptions[category],order:index});
   }))])));
 })();
 
