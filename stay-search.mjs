@@ -97,6 +97,35 @@ function extractJson(text) {
   return null;
 }
 
+/* ---------- 가데이터 가격 ---------- */
+// 웹 검색에서 가격을 찾지 못한 숙소에 데모용 1박 가격을 채운다. 이름으로 계산해 같은 숙소는 항상 같은 값이 나오며,
+// priceDemo=true 로 표시해 화면에서 "가데이터"임을 알린다. 실제 가격이 아니다.
+function nameHash(str) {
+  let h = 2166136261;
+  for (const ch of String(str)) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  return h / 4294967295;       // 0..1
+}
+function fillDemoPrices(stays, q) {
+  const f = q.filters || {};
+  const lo = Number.isFinite(f.priceMin) && f.priceMin > 0 ? f.priceMin : 0;
+  const hi = Number.isFinite(f.priceMax) && f.priceMax > 0 && f.priceMax < 2600000 ? f.priceMax : Infinity;
+  const BASE = { 호텔: 170000, 리조트: 260000, 펜션: 140000, 아파트: 120000, '게스트용 별채': 100000, '단독 주택': 150000, 게스트하우스: 60000, 호스텔: 45000 };
+  stays.forEach(s => {
+    if (s.priceKRW != null) return;
+    const key = Object.keys(BASE).find(k => (s.type || '').includes(k) || (s.name || '').includes(k));
+    const base = BASE[key] || 150000;
+    const rating = s.rating != null ? (s.rating > 10 ? s.rating / 10 : s.rating) : 4.2;       // 5점제·10점제 혼재 대비
+    const grade = 0.8 + Math.max(0, Math.min(1, ((rating > 5 ? rating / 2 : rating) - 3.5) / 1.5)) * 0.8;   // 0.8 ~ 1.6
+    let price = base * grade * (0.55 + nameHash(s.name) * 1.5);
+    if (Number.isFinite(hi) || lo) {
+      const top = Number.isFinite(hi) ? hi : Math.max(lo * 1.8, price);
+      price = Math.min(Math.max(price, lo), top);
+    }
+    s.priceKRW = Math.round(price / 1000) * 1000;
+    s.priceDemo = true;
+  });
+}
+
 /* ---------- 샘플 데이터 (API 키 없을 때 화면 확인용) ---------- */
 function sample(q) {
   const [lat, lng] = CITY[q.dest] || [37.5665, 126.978];
@@ -213,6 +242,7 @@ export async function searchStays(q) {
     const e = new Error('AI 응답을 해석하지 못했습니다. 잠시 후 다시 검색해 주세요.'); e.status = 502; throw e;
   }
   const out = sanitize({ center: centerRaw, stays: merged });
+  fillDemoPrices(out.stays, q);
   if (!out.center && CITY[q.dest]) out.center = { lat: CITY[q.dest][0], lng: CITY[q.dest][1] };
   await attachImages(out.stays);
   const result = {

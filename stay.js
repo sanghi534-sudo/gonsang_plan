@@ -213,8 +213,9 @@
   function priceText(s, nights) {
     if (s.priceKRW == null) return '<span class="sr-sub">가격 정보 없음</span>';
     const night = '₩' + Math.round(s.priceKRW).toLocaleString('ko-KR');
-    if (!nights) return `<u>${night}</u> <span class="sr-sub">/ 1박</span>`;
-    return `<u>총액 ₩${Math.round(s.priceKRW * nights).toLocaleString('ko-KR')}</u> <span class="sr-sub">(${night} × ${nights}박)</span>`;
+    const demo = s.priceDemo ? ' <span class="sr-tag" title="웹에서 가격을 찾지 못해 채운 데모용 가격입니다">가데이터</span>' : '';
+    if (!nights) return `<u>${night}</u> <span class="sr-sub">/ 1박</span>${demo}`;
+    return `<u>총액 ₩${Math.round(s.priceKRW * nights).toLocaleString('ko-KR')}</u> <span class="sr-sub">(${night} × ${nights}박)</span>${demo}`;
   }
   function cardHTML(s, nights) {
     const spec = [s.bedrooms != null && `침실 ${s.bedrooms}개`, s.beds != null && `침대 ${s.beds}개`, s.baths != null && `욕실 ${s.baths}개`].filter(Boolean).join(' · ');
@@ -249,7 +250,7 @@
     const pts = [];
     data.stays.forEach(s => {
       if (s.lat == null || s.lng == null) return;
-      const label = s.priceKRW != null ? '₩' + Math.round(s.priceKRW).toLocaleString('ko-KR') : esc(s.name).slice(0, 10);
+      const label = s.priceKRW != null ? (s.priceDemo ? '~' : '') + '₩' + Math.round(s.priceKRW).toLocaleString('ko-KR') : esc(s.name).slice(0, 10);
       const m = L.marker([s.lat, s.lng], {
         icon: L.divIcon({ className: 'leaflet-div-icon sr-ico', html: `<div class="sr-pin" data-id="${s.id}">${label}</div>`, iconSize: [0, 0] })
       }).addTo(layer);
