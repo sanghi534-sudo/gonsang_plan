@@ -1,0 +1,11 @@
+Generated with the built-in image generation tool.
+Concept: 곤상플랜의 대표 여행 친구. 주머니쥐의 주머니와 여행자의 주머니 사정을 연결합니다.
+Original prompt:
+Use case: logo-brand
+Asset type: transparent raster mascot for a Korean travel planning website and PowerPoint, Gonsang Plan.
+Primary request: An original cute opossum travel companion that connects its pouch to a traveler's budget, conveying a small traveler who cares about your pocketbook.
+Subject: one friendly upright opossum, soft gray body, white face, rounded pink ears, small pink nose, gentle black eyes, long curved pink tail. It has a subtle rounded belly pouch with a folded travel map and tiny coin purse peeking out, and wears a small forest-green backpack. Hold a modest green travel suitcase in one paw and wave hello with the other.
+Style/medium: polished contemporary Korean app character illustration, clean bold silhouette, soft flat colors with restrained dimensional shading, appealing and readable at 96px, original character, not photorealistic.
+Composition: one full-body three-quarter view character alone, centered, ample transparent margin around ears/tail/suitcase; no scenery.
+Color palette: forest green #1D735A, lime #D9F17C accents, warm light gray, cream, muted coral pink.
+Constraints: genuinely transparent background, no words or letters, no logos, no watermark, no photo background, no sticker border, no extra characters, no accessories scattered outside the character. Keep pouch symbol clear but subtle and body proportions charming.

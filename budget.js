@@ -46,8 +46,8 @@
   const plan = {
     target: bounded(saved.target) ? saved.target : null,
     people: Number.isInteger(saved.people) && saved.people >= 1 && saved.people <= 99 ? saved.people : null,
-    local: validCurrency(saved.local) && saved.local !== 'KRW' ? saved.local : '',
-    manualCurrency: !!saved.manualCurrency,
+    // 이전에 수동 선택한 통화는 복원하지 않는다. 현지 통화는 현재 여행지에서만 결정한다.
+    local: '',
     rates: Object.fromEntries(Object.entries(saved.rates || {}).filter(([c, r]) => validCurrency(c) && c !== 'KRW' && bounded(r)))
   };
   const context = { dest: null, people: 0 };
@@ -132,6 +132,9 @@
     #budget-root .bg-step button:disabled{opacity:.4;cursor:default}
     #budget-root .bg-perperson{display:block;font-size:24px;color:#1d735a;margin:12px 0 4px}
     #budget-root .bg-local-amount{font-size:17px;font-weight:700;color:#496356;overflow-wrap:anywhere}
+    #budget-root .bg-local-currency{margin-top:12px;padding:11px 12px;border:1px solid #d5e3da;border-radius:10px;background:#fff;line-height:1.7;overflow-wrap:anywhere}
+    #budget-root .bg-local-currency span{display:block;color:#717171;font-size:11px;font-weight:700}
+    #budget-root .bg-local-currency strong{display:block;color:#315e47;font-size:13px;margin-top:2px}
     #budget-root .bg-error{font-size:12px;color:#b33b36;min-height:0;margin:6px 0 0}
     #budget-root .bg-error:empty{display:none}
     #budget-root details{margin-top:10px;font-size:12px}
@@ -243,11 +246,10 @@
       ${plan.people?'<button type="button" class="bg-link" data-a="people-auto">여행자 수에 맞추기</button>':''}
       <span class="bg-small">1인 예상 금액</span><strong class="bg-perperson">${s.ready?money(s.total/count,'KRW'):'미정'}</strong>
       <div class="bg-local-amount">${s.ready && rate?`≈ ${money(s.total/count/rate,plan.local)}`:plan.local?'환율·금액 확인 후 현지화 표시':'여행지 선택 후 현지 통화 표시'}</div>
-      <div class="bg-fields"><label for="bg-local">현지 통화</label><select id="bg-local" data-local><option value="">통화 선택</option>${curOptions(plan.local,true)}</select></div>
-      <p class="bg-small">${context.dest?`${esc(context.dest)} · `:''}${plan.local?`${plan.local} · ${esc(rateText(plan.local)) || '환율 확인 필요'}`:'여행지 통화를 선택하세요.'}</p>
-      <button type="button" class="bg-link" data-a="local-auto">여행지 통화 자동 선택</button>
+      <div class="bg-local-currency" id="bg-local" role="status" aria-label="여행지에 맞춘 현지 통화"><span>현지 통화 · 여행지와 자동 연동</span><strong>${plan.local?`${esc(context.dest)} · ${plan.local} · ${esc(CUR[plan.local][0])}`:'여행지 선택 후 현지 통화 표시'}</strong></div>
+      <p class="bg-small">${plan.local?`여행지를 바꾸면 현지 통화도 자동으로 바뀌어요. ${esc(rateText(plan.local)) || '환율 확인 필요'}`:context.dest?'이 여행지의 통화 정보가 없어요. 지원 여행지를 선택하면 자동으로 표시돼요.':'여행지를 선택하면 해당 지역의 현지 통화를 자동으로 표시해요.'}</p>
       <details data-rate-details><summary>환율 직접 입력 · 조회 실패 시에도 사용 가능</summary>
-        ${plan.local?`<label for="bg-rate">1 ${plan.local} = 원화 얼마인가요?</label><div class="bg-fields"><input id="bg-rate" data-draft="rate" inputmode="decimal" placeholder="예: 370" value="${plan.rates[plan.local] || ''}"><button type="button" class="bg-btn" data-a="rate">적용</button></div><p class="bg-error" id="bg-rate-error" role="status"></p>${plan.rates[plan.local]?'<button type="button" class="bg-link" data-a="rate-clear">직접 입력 해제</button>':''}`:'<p class="bg-small">현지 통화를 먼저 선택하세요.</p>'}
+        ${plan.local?`<label for="bg-rate">1 ${plan.local} = 원화 얼마인가요?</label><div class="bg-fields"><input id="bg-rate" data-draft="rate" inputmode="decimal" placeholder="예: 370" value="${plan.rates[plan.local] || ''}"><button type="button" class="bg-btn" data-a="rate">적용</button></div><p class="bg-error" id="bg-rate-error" role="status"></p>${plan.rates[plan.local]?'<button type="button" class="bg-link" data-a="rate-clear">직접 입력 해제</button>':''}`:'<p class="bg-small">지원 여행지를 선택하면 해당 통화의 참고 환율을 직접 수정할 수 있어요.</p>'}
       </details>
       <p class="bg-small">전체 비용을 균등 분담한 예상액이에요. 원 단위 반올림으로 합계에 차이가 생길 수 있으며 실제 송금 정산이 아닙니다. 현지화는 수수료를 제외한 참고 환산액이에요.</p>
     </section>`;
@@ -298,10 +300,11 @@
     clear(key) { lastAdjustment = null; delete items[key]; delete editing[key]; render(); notify(); },
     setContext({ dest = '', guests = {} } = {}) {
       const people = ['adult','child','infant'].reduce((sum, k) => sum + (Number.isInteger(guests[k]) && guests[k] >= 0 ? guests[k] : 0), 0);
-      if (dest === context.dest && people === context.people) return;
-      context.dest = String(dest); context.people = Math.min(99, people);
-      if (!plan.manualCurrency) plan.local = currencyFor(context.dest);
-      persist(); render('local');
+      const destination = typeof dest === 'string' ? dest.trim() : '', local = currencyFor(destination);
+      const nextPeople = Math.min(99, people), currencyChanged = plan.local !== local;
+      if (destination === context.dest && nextPeople === context.people && !currencyChanged) return;
+      context.dest = destination; context.people = nextPeople; plan.local = local;
+      persist(); render(currencyChanged ? 'local' : '');
     },
     setDisplay(cur) {
       if (!validCurrency(cur)) return false;
@@ -359,8 +362,8 @@
       plan.people=Math.max(1,Math.min(99,splitCount()+(a==='people-plus'?1:-1))); persist(); render(); notify();
     }
     else if (a === 'people-auto') { plan.people=null; persist(); render(); notify(); }
-    else if (a === 'local-auto') { plan.manualCurrency=false; plan.local=currencyFor(context.dest); persist(); render('local'); notify(); }
     else if (a === 'rate') {
+      if (!plan.local) return;
       const input=root.querySelector('#bg-rate'), amount=parse(input.value);
       if (amount == null || amount<=0) { root.querySelector('#bg-rate-error').textContent='0보다 큰 참고 환율을 입력해 주세요.'; input.setAttribute('aria-invalid','true'); return; }
       plan.rates[plan.local]=amount; persist(); render('rate'); notify();
@@ -388,9 +391,6 @@
   });
   root.addEventListener('change', e => {
     if (e.target.hasAttribute('data-cursel')) api.setDisplay(e.target.value);
-    if (e.target.hasAttribute('data-local')) {
-      plan.local=e.target.value; plan.manualCurrency=!!plan.local; persist(); render('local'); notify();
-    }
   });
 
   /* ---------- 환율 API ---------- */
