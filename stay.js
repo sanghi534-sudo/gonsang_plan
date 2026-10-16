@@ -184,7 +184,7 @@
       </header>
       <div class="sr-body" id="srBody" data-v="list">
         <section class="sr-list" id="srList"></section>
-        <div class="sr-map"><div id="srMapEl"></div></div>
+        <div class="sr-map"><div id="srMapEl"></div><div class="sr-legend" id="srLegend"></div></div>
       </div>`;
     pane.appendChild(overlay);   // 항공 탭처럼 현재 화면의 숙소 탭 하단에 표시
     overlay.querySelector('#srBack').addEventListener('click', closeResults);
@@ -226,7 +226,7 @@
     </article>`;
   }
 
-  function renderMap(data) {
+  function renderMap(data, dest) {
     const el = $o('#srMapEl');
     if (!window.L) { el.innerHTML = '<div class="sr-state">지도를 불러오지 못했어요.</div>'; return; }
     if (!map) {
@@ -236,7 +236,9 @@
         maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
       }).addTo(map);
       layer = L.layerGroup().addTo(map);
+      addWorldPins();
     }
+    paintWorldPins(dest);
     layer.clearLayers(); markers = {};
     const pts = [];
     data.stays.forEach(s => {
@@ -272,9 +274,9 @@
     const nights = nightsOf(ctx);
     $o('#srTitle').textContent = data.stays.length ? `${ctx.dest} 숙소 ${data.stays.length}개` : `${ctx.dest} 숙소를 찾지 못했어요`;
     $o('#srNote').textContent = (data.source === 'sample' ? '샘플 데이터 · ' : 'AI 웹 검색 · ') + (data.note || '');
-    if (!data.stays.length) { showState('조건에 맞는 숙소를 찾지 못했어요.<br>가격 범위나 편의시설 조건을 줄여서 다시 검색해 보세요.'); renderMap(data); return; }
+    if (!data.stays.length) { showState('조건에 맞는 숙소를 찾지 못했어요.<br>가격 범위나 편의시설 조건을 줄여서 다시 검색해 보세요.'); renderMap(data, ctx.dest); return; }
     $o('#srList').innerHTML = data.stays.map(s => cardHTML(s, nights)).join('');
-    renderMap(data);
+    renderMap(data, ctx.dest);
   }
 
   async function runSearch() {
@@ -326,7 +328,7 @@
     }
   });
 
-  /* ---------- 전 세계 여행지 지도 (숙소 탭 상단, OpenStreetMap + Leaflet) ---------- */
+  /* ---------- 전 세계 지도 요소 (숙소 검색 결과 지도에 함께 표시) ---------- */
   // 대륙별 색상과 도시 좌표. 이름은 상단 여행지 목록(trip-conditions.html)과 같다.
   const WORLD = {
     '아시아': ['#1d735a', [['도쿄', 35.6762, 139.6503], ['오사카', 34.6937, 135.5023], ['교토', 35.0116, 135.7681], ['후쿠오카', 33.5902, 130.4017],
@@ -339,110 +341,46 @@
   };
   const wcss = document.createElement('style');
   wcss.textContent = `
-    #stWorldMap{height:380px;border-radius:16px;overflow:hidden;background:#e9ecea;border:1px solid #dfe2e0}
-    .stw-legend{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
-    .stw-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid #ddd;background:#fff;font-size:13px;font-weight:700;cursor:pointer}
+    .sr-legend{position:absolute;left:54px;right:12px;top:10px;z-index:500;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+    .sr-legend .stw-chip{pointer-events:auto}
+    .stw-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;border:1px solid #ddd;background:#fff;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)}
     .stw-chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
     .stw-chip:hover{border-color:#1d735a}
     .stw-chip.on{background:#e4f3ed;border-color:#1d735a}
-    .stw-pop{text-align:center;font-family:inherit}
-    .stw-pop b{font-size:15px}
-    .stw-pop small{display:block;color:#717171;margin:2px 0 8px}
-    .stw-pop button{padding:7px 12px;border-radius:10px;background:#1d735a;color:#fff;font-weight:700;font-size:13px;border:0;cursor:pointer}
-    .stw-pop button:disabled{background:#9aa;cursor:default}
-    .stw-sel{margin:10px 0 0;font-size:13px;color:#555}
   `;
   document.head.appendChild(wcss);
 
-  const worldSec = document.createElement('section');
-  worldSec.className = 'st-sec';
-  worldSec.innerHTML = `
-    <h4>🌍 전 세계 여행지 지도</h4>
-    <p class="st-sub">핀을 눌러 여행지를 선택하세요. 상단 여행지와 연동됩니다. 마우스로 확대·이동할 수 있어요.</p>
-    <div class="stw-legend" id="stwLegend"></div>
-    <div id="stWorldMap" aria-label="전 세계 여행지 지도"></div>
-    <p class="stw-sel" id="stwSel"></p>`;
-  const head3 = pane.querySelector('h3');
-  (head3 ? head3.insertAdjacentElement('afterend', worldSec) : pane.prepend(worldSec));
-
-  let wMap, wMarkers = {}, wReady = false;
-  const currentDest = () => (window.TripContext ? window.TripContext().dest : '') || '';
-
-  function pickCity(name) {
-    if (currentDest() === name) return;
-    const btn = document.querySelector(`#destList .dest[data-d="${name}"]`);
-    if (btn) btn.click();
-    else {
-      const input = document.getElementById('destInput');
-      if (input) { input.value = name; input.dispatchEvent(new Event('input', { bubbles: true })); }
-    }
-    document.body.click();          // 상단 선택 패널(날짜 등)이 열려 있으면 닫는다
-    paintWorld();
-  }
-  function paintWorld() {
-    const sel = currentDest();
-    Object.keys(wMarkers).forEach(n => {
-      const m = wMarkers[n], on = n === sel;
-      m.setStyle({ radius: on ? 12 : 8, weight: on ? 4 : 2, color: on ? '#111' : '#fff' });
-      if (on) m.bringToFront();
-    });
-    const el = document.getElementById('stwSel');
-    if (el) el.textContent = sel ? `선택한 여행지: ${sel}` : '아직 여행지를 선택하지 않았어요.';
-  }
-  function focusContinent(name) {
-    document.querySelectorAll('#stwLegend .stw-chip').forEach(c => c.classList.toggle('on', c.dataset.c === name));
-    const pts = Object.entries(WORLD)
-      .filter(([c]) => name === '전체' || c === name).flatMap(([, v]) => v[1].map(d => [d[1], d[2]]));
-    if (name === '전체') wMap.setView([25, 10], 2);
-    else wMap.fitBounds(pts, { padding: [40, 40], maxZoom: 5 });
-  }
-
-  async function initWorld() {
-    if (wReady) return; wReady = true;
-    try { await loadLeaflet(); } catch (e) {
-      document.getElementById('stWorldMap').textContent = '지도를 불러오지 못했어요. 네트워크를 확인해 주세요.'; wReady = false; return;
-    }
-    wMap = L.map('stWorldMap', { minZoom: 2, maxBounds: WORLD_BOUNDS, maxBoundsViscosity: 1, worldCopyJump: false }).setView([25, 10], 2);
-    L.tileLayer(OSM_TILES, { maxZoom: 19, attribution: OSM_ATTR }).addTo(wMap);
-    L.control.scale({ imperial: false }).addTo(wMap);
-    Object.entries(WORLD).forEach(([cont, [color, cities]]) => {
+  // 결과 지도 위에 전 세계 도시 핀(대륙별 색상)을 한 번 깔고, 선택한 여행지를 강조한다.
+  let worldPins = {}, worldLayer = null;
+  function addWorldPins() {
+    if (worldLayer) return;
+    worldLayer = L.layerGroup().addTo(map);
+    Object.entries(WORLD).forEach(([, [color, cities]]) => {
       cities.forEach(([name, lat, lng]) => {
-        const m = L.circleMarker([lat, lng], { radius: 8, color: '#fff', weight: 2, fillColor: color, fillOpacity: 0.95 }).addTo(wMap);
-        m.bindTooltip(name, { direction: 'top', offset: [0, -6] });
-        m.bindPopup(`<div class="stw-pop"><b>${esc(name)}</b><small>${esc(cont)}</small><button type="button" data-pick="${esc(name)}">여행지로 선택</button></div>`);
-        m.on('click', () => m.openPopup());
-        wMarkers[name] = m;
+        const m = L.circleMarker([lat, lng], { radius: 6, color: '#fff', weight: 2, fillColor: color, fillOpacity: 0.95 }).addTo(worldLayer);
+        m.bindTooltip(name, { direction: 'top', offset: [0, -4] });
+        worldPins[name] = m;
       });
     });
-    const legend = document.getElementById('stwLegend');
-    legend.innerHTML = `<button class="stw-chip on" type="button" data-c="전체">전체</button>` +
+    const legend = $o('#srLegend');
+    legend.innerHTML = '<button class="stw-chip on" type="button" data-c="전체">🌍 전체</button>' +
       Object.entries(WORLD).map(([c, [color]]) => `<button class="stw-chip" type="button" data-c="${esc(c)}"><i style="background:${color}"></i>${esc(c)}</button>`).join('');
-    legend.addEventListener('click', e => { const b = e.target.closest('.stw-chip'); if (b) focusContinent(b.dataset.c); });
-    wMap.getContainer().addEventListener('click', e => {
-      const b = e.target.closest('[data-pick]'); if (!b) return;
-      pickCity(b.dataset.pick); wMap.closePopup();
+    legend.addEventListener('click', e => {
+      const b = e.target.closest('.stw-chip'); if (!b) return;
+      e.stopPropagation();
+      legend.querySelectorAll('.stw-chip').forEach(c => c.classList.toggle('on', c === b));
+      if (b.dataset.c === '전체') { map.setView([25, 10], 2); return; }
+      const pts = WORLD[b.dataset.c][1].map(d => [d[1], d[2]]);
+      map.fitBounds(pts, { padding: [40, 40], maxZoom: 5 });
     });
-    paintWorld();
-    const sel = currentDest();
-    if (sel && wMarkers[sel]) wMap.setView(wMarkers[sel].getLatLng(), 4);
-    setTimeout(() => wMap.invalidateSize(), 80);
   }
-
-  // 숙소 탭이 보일 때 지도를 만든다(숨겨진 상태에서는 크기를 알 수 없음). 상단 여행지가 바뀌면 핀 강조를 갱신한다.
-  const maybeInit = () => {
-    if (pane.classList.contains('on')) { initWorld().then(() => wMap && setTimeout(() => wMap.invalidateSize(), 60)); }
-  };
-  new MutationObserver(maybeInit).observe(pane, { attributes: true, attributeFilter: ['class'] });
-  maybeInit();
-  document.addEventListener('click', () => {
-    if (!wMap) return;
-    const before = Object.keys(wMarkers).find(n => wMarkers[n].options.color === '#111');
-    const sel = currentDest();
-    if (before !== sel) {
-      paintWorld();
-      if (sel && wMarkers[sel]) wMap.flyTo(wMarkers[sel].getLatLng(), Math.max(wMap.getZoom(), 4), { duration: 0.8 });
-    }
-  });
+  function paintWorldPins(dest) {
+    Object.keys(worldPins).forEach(n => {
+      const on = n === dest;
+      worldPins[n].setStyle({ radius: on ? 10 : 6, weight: on ? 3 : 2, color: on ? '#111' : '#fff' });
+      if (on) worldPins[n].bringToFront();
+    });
+  }
 
   drawPrice(); drawSteppers();
 })();
