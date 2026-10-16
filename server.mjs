@@ -103,6 +103,8 @@ const STATIC = {
   '/trip-conditions.html': ['trip-conditions.html', 'text/html; charset=utf-8'],
   '/budget.js': ['budget.js', 'text/javascript; charset=utf-8'],
   '/stay.js': ['stay.js', 'text/javascript; charset=utf-8'],
+  '/travel-trends.js': ['travel-trends.js', 'text/javascript; charset=utf-8'],
+  '/travel-trends-data.js': ['travel-trends-data.js', 'text/javascript; charset=utf-8'],
 };
 
 async function readJsonBody(req, limit = 20000) {

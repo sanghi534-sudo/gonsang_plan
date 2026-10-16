@@ -2,18 +2,20 @@
  * HTML은 데이터로만 읽는다. 첨부 HTML의 스크립트를 eval/import하지 않는다.
  * 원본/프로젝트 HTML을 덮어쓰지 않고 build/naver-trends/<실행시각>/ 에 생성한다.
  */
-import { readFile, mkdir, writeFile, copyFile } from 'node:fs/promises';
+import { readFile, mkdir, writeFile, copyFile, rename } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const arg = name => { const i = args.indexOf(name); return i < 0 ? null : args[i + 1]; };
-const help = `사용법: node --env-file-if-exists=.env scripts/update-naver-trends.mjs --input "HTML 경로" [--cities "도쿄,파리"] [--end YYYY-MM-DD]
+const help = `사용법: node --env-file-if-exists=.env scripts/update-naver-trends.mjs [--cities "도쿄,파리"] [--end YYYY-MM-DD] [--apply]
+대상: 현재 프로젝트 trip-conditions.html의 CONTINENTS에 있는 모든 여행지
 NAVER_TREND_PROVIDER=hub (기본) 또는 legacy (기존 신청자 전용)
 NAVER_TREND_CLIENT_ID / NAVER_TREND_CLIENT_SECRET: 서버 환경변수
 NAVER_TREND_FREE_PLAN_CONFIRMED=true: 콘솔에서 무료 요금제임을 확인한 뒤에만 설정
-출력: build/naver-trends/<실행시각>/trend-data.json, trip-conditions.html, 보조 JS
+출력: build/naver-trends/<실행시각>/trend-data.json, 미리보기 HTML과 보조 JS
+--apply: 조회 성공 후 현재 프로젝트 travel-trends-data.js에만 데이터 반영
 API는 상대 검색 추이만 제공하며 SNS 언급량·실제 검색 횟수는 제공하지 않습니다.`;
 
 function fail(message) { throw new Error(message); }
@@ -22,7 +24,7 @@ const ymd = d => d.toISOString().slice(0, 10);
 const shift = (date, days) => { const d = new Date(`${date}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + days); return ymd(d); };
 const koreanToday = new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 
-// HTML 중 T의 제한된 리터럴 문법만 해석: 문자열/숫자/배열/객체. 코드 실행 없음.
+// 현재 HTML의 CONTINENTS 리터럴만 해석: 문자열/숫자/배열/객체. 코드 실행 없음.
 function literalAt(text, start) {
   let i = start;
   const skip = () => { while (/\s/.test(text[i] || '') && i < text.length) i++; };
@@ -54,15 +56,11 @@ function literalAt(text, start) {
     }
     i--; const number=text.slice(i).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?/);
     if(number){i+=number[0].length; return Number(number[0]);}
-    fail('T에는 문자열·숫자·배열·객체만 허용됩니다.');
+    fail('여행지 목록에는 문자열·숫자·배열·객체만 허용됩니다.');
   }
   const data=value(); return {data,end:i};
 }
 
-function replaceOnce(source, before, after) {
-  if(source.split(before).length!==2)fail(`첨부 HTML 형식이 달라졌습니다. 자동 변경을 중단합니다: ${before.slice(0,60)}`);
-  return source.replace(before,after);
-}
 const safeJSON = data => JSON.stringify(data, null, 2).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
 
 function daily(result, dates) {
@@ -80,21 +78,23 @@ function daily(result, dates) {
 
 async function main() {
   if(args.includes('--help')){console.log(help);return;}
-  const input=arg('--input'); if(!input)fail(help);
   const config=JSON.parse(await readFile(path.join(ROOT,'scripts/naver-trends.config.json'),'utf8'));
-  const cities=[...new Set((arg('--cities') || config.cities.join(',')).split(',').map(s=>s.trim()).filter(Boolean))];
-  const html=await readFile(path.resolve(input),'utf8');
-  const open=html.indexOf('<script id="trend-demo">'), close=html.indexOf('</script>',open);
-  if(open<0 || close<0)fail('입력 HTML에 trend-demo 스크립트가 없습니다.');
-  let script=html.slice(open,close);
-  const marker=script.indexOf('const T = '); if(marker<0)fail('T 데이터를 찾을 수 없습니다.');
-  const start=marker+'const T = '.length, parsed=literalAt(script,start), catalog=parsed.data;
-  if(Array.isArray(catalog) || !catalog || typeof catalog!=='object')fail('T는 도시별 객체여야 합니다.');
-  for(const [city,rows] of Object.entries(catalog)){
-    if(!Array.isArray(rows) || !rows.length || rows.some(row=>!Array.isArray(row) || row.length!==8 || typeof row[0]!=='string' || !['명소','핫플','기념품'].includes(row[1]) || ![1,2,3].includes(row[6]) || [4,5,7].some(i=>typeof row[i]!=='string')))fail(`${city}: T 데이터 구조가 올바르지 않습니다.`);
-    if(new Set(rows.map(r=>r[0])).size!==rows.length)fail(`${city}: 장소 이름이 중복됩니다.`);
-  }
-  if(!cities.length || cities.some(c=>!Object.hasOwn(catalog,c)))fail('대상 도시의 장소 목록이 T에 없습니다. 먼저 장소 목록을 추가하세요.');
+  const html=await readFile(path.join(ROOT,'trip-conditions.html'),'utf8');
+  const marker=html.indexOf('const CONTINENTS = '); if(marker<0)fail('현재 프로젝트의 여행지 목록을 찾을 수 없습니다.');
+  const continents=literalAt(html,marker+'const CONTINENTS = '.length).data;
+  if(!continents || typeof continents!=='object' || Array.isArray(continents))fail('여행지 목록 형식을 확인하세요.');
+  const allCities=[...new Set(Object.values(continents).flatMap(rows=>{
+    if(!Array.isArray(rows) || rows.some(r=>!Array.isArray(r) || typeof r[1]!=='string'))fail('대륙별 여행지 목록 형식을 확인하세요.');
+    return rows.map(r=>r[1]);
+  }))];
+  const cities=arg('--cities')?[...new Set(arg('--cities').split(',').map(s=>s.trim()).filter(Boolean))]:allCities;
+  if(!cities.length || cities.some(c=>!allCities.includes(c)))fail('현재 프로젝트에 있는 여행지만 지정하세요.');
+  // 모든 대상의 검색어를 먼저 검사한다. 새 도시가 추가되면 호출 전에 누락을 알린다.
+  const catalog=Object.fromEntries(cities.map(city=>{
+    const rows=Object.entries(config.keywords).filter(([key])=>key.startsWith(city+'|')).map(([key,keywords])=>({name:key.slice(city.length+1),keywords}));
+    if(!rows.length || rows.some(r=>!r.name || !Array.isArray(r.keywords) || !r.keywords.length || r.keywords.length>20 || r.keywords.some(k=>typeof k!=='string' || !k.trim())))fail(`${city}: 검색어 설정이 없습니다. config의 keywords에 추가하세요.`);
+    return [city,rows];
+  }));
   const end=arg('--end') || shift(koreanToday,-1);
   if(!/^\d{4}-\d{2}-\d{2}$/.test(end) || !Number.isFinite(Date.parse(end)) || ymd(new Date(end))!==end || end>=koreanToday || end<'2016-01-14')fail('--end는 2016-01-14 이후, 한국 시간 어제까지의 실제 날짜여야 합니다.');
   const dates=Array.from({length:14},(_,i)=>shift(end,i-13));
@@ -108,16 +108,10 @@ async function main() {
   const result={schemaVersion:1,source:'NAVER DataLab Search Trend',provider,fetchedAt:new Date().toISOString(),
     previous:{start:dates[0],end:dates[6]},current:{start:dates[7],end:dates[13]},
     method:'도시별 같은 후보 집합에서 2주간 주평균 최댓값을 100으로 정규화. 변화는 같은 분모로 계산한 전주 대비 점수 차이(p). 요청 간 공통 앵커의 14일 합계로 척도 보정. 절대 검색 횟수나 SNS 언급량 아님.',cities:{}};
-  // 모든 항목의 예시 숫자를 먼저 비운다. 미선택 도시도 실제 데이터로 오인하지 않게 한다.
-  for(const rows of Object.values(catalog)) for(const row of rows){row[2]=null;row[3]=null;}
   let calls=0;
   for(const city of cities){
     const rows=catalog[city];
-    const groups=rows.map(row=>{
-      const key=`${city}|${row[0]}`, keywords=config.keywords[key];
-      if(!Array.isArray(keywords) || !keywords.length || keywords.length>20 || keywords.some(k=>typeof k!=='string' || !k.trim()))fail(`${key}: 검색어 설정이 없습니다. config의 keywords에 추가하세요.`);
-      return {groupName:row[0],keywords:[...new Set(keywords)]};
-    });
+    const groups=rows.map(row=>({groupName:row.name,keywords:[...new Set(row.keywords)]}));
     const anchor=groups[0], others=groups.slice(1), batches=[];
     if(!others.length)batches.push([anchor]);
     for(let i=0;i<others.length;i+=4)batches.push([anchor,...others.slice(i,i+4)]);
@@ -133,8 +127,8 @@ async function main() {
       if(new Set(titles).size!==titles.length || keywordGroups.some(g=>!titles.includes(g.groupName)))fail(`${city}: 누락·중복된 응답 그룹이 있습니다.`);
       const series=daily(payload.results.find(r=>r.title===anchor.groupName),dates);
       const total=series?.reduce((sum,v)=>sum+v,0);
-      if(!total)fail(`${city}: 공통 기준 검색어 데이터가 부족합니다. 숫자를 추정하지 않고 중단합니다.`);
-      anchorReference ??= total; const scale=anchorReference/total;
+      if(!total && batches.length>1){observations.clear(); console.log(`${city}: 공통 기준 데이터 부족 · 예시값으로 대체하지 않음`);break;}
+      anchorReference ??= total; const scale=batches.length===1?1:anchorReference/total;
       for(const group of keywordGroups){
         if(observations.has(group.groupName))continue;
         const values=daily(payload.results.find(r=>r.title===group.groupName),dates);
@@ -143,38 +137,26 @@ async function main() {
     }
     const denominator=Math.max(0,...[...observations.values()].filter(Boolean).flatMap(v=>[v.previous,v.current]));
     result.cities[city]=rows.map(row=>{
-      const item=observations.get(row[0]); const available=!!item && denominator>0;
-      row[2]=available?round(item.current/denominator*100):null;
-      row[3]=available?round((item.current-item.previous)/denominator*100):null;
-      return {name:row[0],keywords:groups.find(g=>g.groupName===row[0]).keywords,score:row[2],deltaPoints:row[3],available,reason:available?null:'14일 데이터 부족 또는 기준값 없음'};
+      const item=observations.get(row.name); const available=!!item && denominator>0;
+      return {name:row.name,keywords:row.keywords,score:available?round(item.current/denominator*100):null,
+        deltaPoints:available?round((item.current-item.previous)/denominator*100):null,
+        available,reason:available?null:'14일 데이터 부족 또는 기준값 없음'};
     });
     console.log(`${city}: ${result.cities[city].filter(r=>r.available).length}/${rows.length}개 계산`);
   }
-  script=script.slice(0,start)+safeJSON(catalog)+script.slice(parsed.end);
-  script=replaceOnce(script,"const BASE_DATE = '2026-10-16';",`const BASE_DATE = '${end}';`);
-  script=replaceOnce(script,'DEMO · SNS 화제도 예시','NAVER · 검색 관심도');
-  script=replaceOnce(script,'화제도는 시연용 예시 점수예요',`${dates[7]}~${end} 검색 추이 · ▲▼는 전주 대비 점수 차이(p)`);
-  script=replaceOnce(script,'const d = delta > 0',`const d = delta == null ? '<span class="tr-flat">비교 불가</span>' : delta > 0`);
-  script=replaceOnce(script,'▲${delta}','▲${delta}p');
-  script=replaceOnce(script,'▼${-delta}','▼${-delta}p');
-  script=replaceOnce(script,'width:${score}%','width:${score ?? 0}%');
-  script=replaceOnce(script,'화제도 ${score}${d}','검색 관심도 ${score == null ? "데이터 부족 / 미조회" : score}${d}');
-  script=script.replaceAll('b[2] - a[2]','(b[2] ?? -1) - (a[2] ?? -1)');
-  script=replaceOnce(script,'화제도 ${it[2]}','검색 관심도 ${it[2] ?? "데이터 부족 / 미조회"}');
-  script=replaceOnce(script,'기준 ${BASE_DATE} · 시연용 예시 데이터','기준 ${BASE_DATE} · 네이버 검색 추이 참고 지수');
-  const oldCriteria='시연용 예시 점수입니다. 실제 서비스에서는 네이버 데이터랩 검색량 추이와 SNS 언급량(썸트렌드 등)을 0~100으로 정규화하고, 변화는 전주 대비 증감으로 표시합니다.';
-  script=replaceOnce(script,oldCriteria,`${result.method} 조회 구간: ${dates[0]}~${end}. 검색어는 후보·별칭을 수동 선정했습니다. 도시 간 점수 비교는 지원하지 않으며 데이터 누락은 0으로 채우지 않습니다.`);
-  const commentStart=script.indexOf('/* 시연용 데이터.'), commentEnd=script.indexOf('*/',commentStart);
-  if(commentStart<0 || commentEnd<0)fail('T 설명 주석 형식이 변경됐습니다. 원본을 확인하세요.');
-  script=script.slice(0,commentStart)+'/* NAVER 상대 검색 추이. null은 데이터 부족/미조회.\n         [이름, 종류, 검색 관심도(0~100), 전주 대비 점수차(p), 촬영 포인트, 해시태그, 걷기, 팁] */'+script.slice(commentEnd+2);
-  const output=html.slice(0,open)+script+html.slice(close);
+  const dataScript='// NAVER 검색 추이 스냅샷 · API 인증 정보 없음\nwindow.GonsangSearchTrends = '+safeJSON(result)+';\n';
   // 원본 HTML과 프로젝트 파일은 그대로 두고, 성공한 실행별 폴더에만 기록한다.
   const stamp=new Date().toISOString().replace(/[:.]/g,'-');
   const folder=path.join(ROOT,'build','naver-trends',stamp);
   await mkdir(folder,{recursive:true});
   await writeFile(path.join(folder,'trend-data.json'),JSON.stringify(result,null,2)+'\n');
-  await writeFile(path.join(folder,'trip-conditions.html'),output);
-  for(const file of ['budget.js','stay.js'])await copyFile(path.join(ROOT,file),path.join(folder,file));
-  console.log(`완료: ${folder}\n${calls}회 호출 · 원본은 변경하지 않았습니다. 생성한 HTML을 브라우저로 열어 확인하세요.`);
+  await writeFile(path.join(folder,'trip-conditions.html'),html);
+  await writeFile(path.join(folder,'travel-trends-data.js'),dataScript);
+  for(const file of ['budget.js','stay.js','travel-trends.js'])await copyFile(path.join(ROOT,file),path.join(folder,file));
+  if(args.includes('--apply')){
+    const temporary=path.join(folder,'apply-data.js'); await writeFile(temporary,dataScript);
+    await rename(temporary,path.join(ROOT,'travel-trends-data.js'));
+  }
+  console.log(`완료: ${folder}\n${calls}회 호출 · ${cities.length}개 도시 · ${args.includes('--apply')?'현재 프로젝트의 검색 추이 데이터만 반영했습니다.':'프로젝트 원본은 그대로입니다. 미리보기 HTML을 열어 확인하세요.'}`);
 }
 main().catch(error=>{console.error(error instanceof TypeError?'네트워크 요청 또는 데이터 형식을 확인하세요. 원본 파일은 변경하지 않았습니다.':error.message);process.exitCode=1;});
