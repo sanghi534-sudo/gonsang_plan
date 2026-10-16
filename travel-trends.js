@@ -2,24 +2,26 @@
  * NAVER 인증/호출은 갱신 스크립트에서만 수행한다. 예산·항공·숙소 상태를 쓰지 않는다.
  */
 (() => {
-  const root = document.getElementById('travel-trends-root');
-  if (!root) return;
+  const host = document.getElementById('travel-trends-root');
+  if (!host) return;
+  const root = document.createElement('section');
+  root.id = 'search-trends-detail'; host.append(root);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const style = document.createElement('style');
   style.textContent = `
-    #travel-trends-root{margin-top:24px;padding-top:22px;border-top:1px solid #dfe7e2}
-    #travel-trends-root h4{margin:10px 0;font-size:20px}
-    #travel-trends-root .nt-chip{display:inline-block;border-radius:20px;background:#eaf4ee;color:#1d735a;padding:5px 9px;font-size:11px;font-weight:800}
-    #travel-trends-root p,#travel-trends-root details{font-size:12px;line-height:1.7;color:#717171}
-    #travel-trends-root .nt-empty{padding:20px;border:1px dashed #bfd1c6;border-radius:14px;background:#f7fbf8;font-size:14px;line-height:1.8}
-    #travel-trends-root article{padding:16px 0;border-bottom:1px solid #e5e9e6}
-    #travel-trends-root .nt-top{display:flex;justify-content:space-between;align-items:baseline;gap:14px;font-size:14px}
-    #travel-trends-root .nt-score{white-space:nowrap;color:#1d735a;font-weight:800}
-    #travel-trends-root .nt-track{margin-top:10px;height:6px;background:#e8efea;border-radius:6px;overflow:hidden}
-    #travel-trends-root .nt-track i{display:block;height:100%;background:#42967a}
-    #travel-trends-root .nt-up{color:#bd5146}#travel-trends-root .nt-down{color:#4e78b3}
-    #travel-trends-root summary{cursor:pointer;margin-top:14px}
-    @media(max-width:480px){#travel-trends-root .nt-top{flex-wrap:wrap;gap:6px}}
+    #search-trends-detail{margin-top:24px;padding-top:22px;border-top:1px solid #dfe7e2}
+    #search-trends-detail h4{margin:10px 0;font-size:20px}
+    #search-trends-detail .nt-chip{display:inline-block;border-radius:20px;background:#eaf4ee;color:#1d735a;padding:5px 9px;font-size:11px;font-weight:800}
+    #search-trends-detail p,#search-trends-detail details{font-size:12px;line-height:1.7;color:#717171}
+    #search-trends-detail .nt-empty{padding:20px;border:1px dashed #bfd1c6;border-radius:14px;background:#f7fbf8;font-size:14px;line-height:1.8}
+    #search-trends-detail article{padding:16px 0;border-bottom:1px solid #e5e9e6}
+    #search-trends-detail .nt-top{display:flex;justify-content:space-between;align-items:baseline;gap:14px;font-size:14px}
+    #search-trends-detail .nt-score{white-space:nowrap;color:#1d735a;font-weight:800}
+    #search-trends-detail .nt-track{margin-top:10px;height:6px;background:#e8efea;border-radius:6px;overflow:hidden}
+    #search-trends-detail .nt-track i{display:block;height:100%;background:#42967a}
+    #search-trends-detail .nt-up{color:#bd5146}#search-trends-detail .nt-down{color:#4e78b3}
+    #search-trends-detail summary{cursor:pointer;margin-top:14px}
+    @media(max-width:480px){#search-trends-detail .nt-top{flex-wrap:wrap;gap:6px}}
   `;
   document.head.appendChild(style);
   function render() {

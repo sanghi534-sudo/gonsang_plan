@@ -152,7 +152,7 @@ async function main() {
   await writeFile(path.join(folder,'trend-data.json'),JSON.stringify(result,null,2)+'\n');
   await writeFile(path.join(folder,'trip-conditions.html'),html);
   await writeFile(path.join(folder,'travel-trends-data.js'),dataScript);
-  for(const file of ['budget.js','stay.js','travel-trends.js'])await copyFile(path.join(ROOT,file),path.join(folder,file));
+  for(const file of ['budget.js','stay.js','travel-trends.js','tour-catalog.js','tour-recommendations.js','flight-budget.js','trip-summary.html'])await copyFile(path.join(ROOT,file),path.join(folder,file));
   if(args.includes('--apply')){
     const temporary=path.join(folder,'apply-data.js'); await writeFile(temporary,dataScript);
     await rename(temporary,path.join(ROOT,'travel-trends-data.js'));

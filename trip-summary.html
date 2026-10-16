@@ -136,6 +136,8 @@
       <p class="lead">확정한 항공·숙소·관광·맛집이 날짜 순서로 정리돼요.</p>
       <div class="opts" id="days"></div>
       <div id="day"></div>
+      <section id="tour-picks" hidden aria-label="일정에 담은 관광 후보"></section>
+      <section id="course-picks" hidden aria-label="관광 탭에서 만든 Day별 추천 코스"></section>
     </div>
 
     <div class="pane" id="pane-cost">
@@ -224,6 +226,17 @@
   const cur = info ? info.cur : null;
   const bud = (saved && saved.budget) || {};
   const fixed = k => bud[k] && Number.isFinite(bud[k].krw) ? bud[k].krw : null;
+  // 추천 모듈에서 담은 장소는 후보 목록으로 보존한다. 팀원의 일자별 일정 생성은 그대로 둔다.
+  const tourPicks = Array.isArray(saved?.tour) ? saved.tour.filter(p => p && p.city === dest && typeof p.name === 'string').slice(0,50) : [];
+  if (tourPicks.length) {
+    const box = $('#tour-picks'); box.hidden = false;
+    box.innerHTML = `<h3 style="margin-top:24px">♥ 일정에 담은 관광 후보 ${tourPicks.length}곳</h3><p class="lead">방문 날짜와 이동 순서는 직접 조정해 주세요. 입장료는 별도로 확인해야 합니다.</p><ul>${tourPicks.map(p => `<li style="margin:10px 0"><b>${esc(p.name)}</b> · ${esc(p.category)} <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(dest+' '+p.name)}" target="_blank" rel="noopener noreferrer">지도 보기 ↗</a></li>`).join('')}</ul>`;
+  }
+  const savedCourse = saved?.course;
+  if (savedCourse?.city === dest && Array.isArray(savedCourse.days) && savedCourse.days.length) {
+    const box = $('#course-picks'); box.hidden = false;
+    box.innerHTML = `<h3 style="margin-top:24px">🗓 관광 탭에서 만든 추천 코스</h3><p class="lead">DEMO · 위 기본 일정표와 별도로 저장한 관광 후보 코스입니다. 운영시간과 실제 이동편을 확인해 날짜별 일정을 확정하세요.</p>${savedCourse.days.slice(0,7).map((day,i) => `<details style="margin:12px 0"><summary>Day ${i+1} · ${esc(day.date)}</summary><ul>${(Array.isArray(day.items)?day.items:[]).map(p=>`<li style="margin:8px 0">${esc(p.time)} · ${esc(p.name)}${p.picked?' 💚':''}</li>`).join('')}</ul></details>`).join('')}`;
+  }
 
   /* ---------- 상단 · 사이드 요약 ---------- */
   const fmt = d => `${d.getMonth() + 1}/${d.getDate()}(${DOW[d.getDay()]})`;

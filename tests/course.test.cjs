@@ -1,0 +1,34 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const html=fs.readFileSync('trip-conditions.html','utf8'),data=JSON.parse(html.match(/<script id="course-data" type="application\/json">([\s\S]*?)<\/script>/)[1]),code=html.match(/<script id="course-demo">([\s\S]*?)<\/script>/)[1];
+function harness(storage=new Map()){
+ const events=new Map(),root={innerHTML:'',classList:{toggle(){}},addEventListener(k,f){events.set('root:'+k,f);}},ctx={dest:'',pace:'보통'},trend={mode:'young',picks:[]};
+ const document={readyState:'complete',getElementById:id=>id==='course-root'?root:id==='course-data'?{textContent:JSON.stringify(data)}:null,addEventListener(k,f){const a=events.get(k)||[];a.push(f);events.set(k,a);},dispatchEvent(e){for(const f of events.get(e.type)||[])f(e);}};
+ const sandbox={window:{TripContext:()=>ctx,TripTrend:{get:()=>trend}},document,localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},CustomEvent:class{constructor(type,o){this.type=type;this.detail=o?.detail;}},console,Intl};
+ vm.runInNewContext(code,sandbox,{timeout:2000});
+ const emit=()=>document.dispatchEvent({type:'tripcontext:change'});
+ const get=()=>JSON.parse(JSON.stringify(sandbox.window.TripCourse.get()));
+ const shuffle=()=>events.get('root:click')({target:{closest:()=>({dataset:{},hasAttribute:k=>k==='data-course-shuffle'})}});
+ return {ctx,trend,root,emit,get,shuffle,api:sandbox.window.TripCourse};
+}
+const out=[],test=(n,name,f)=>{try{f();out.push({n,name,status:'PASS'});}catch(e){out.push({n,name,status:'FAIL',error:e.message});}};
+const h=harness(),visits=r=>r.days.flatMap(d=>d.items).filter(p=>p.id);
+test(1,'미선택 빈 상태',()=>assert.match(h.root.innerHTML,/상단에서 여행지를/));
+test(2,'후쿠오카 날짜 없음 3일',()=>{h.ctx.dest='후쿠오카';h.emit();assert.equal(h.get().days.length,3);assert.match(h.root.innerHTML,/날짜를 고르면/);});
+test(3,'4박 5일 실제 날짜',()=>{h.ctx.start='2026-10-21';h.ctx.end='2026-10-25';h.emit();assert.equal(h.get().days.length,5);assert.equal(h.get().days[4].date,'2026-10-25');});
+test(4,'9박은 7일 상한',()=>{h.ctx.end='2026-10-30';h.emit();assert.equal(h.get().days.length,7);assert.match(h.root.innerHTML,/8일 이후는 자유일정/);});
+test(5,'모드 구성과 시작 시각 변경',()=>{const young=h.get();h.trend.mode='old';h.emit();const old=h.get();assert.equal(old.days[1].start,630);assert.equal(young.days[1].start,570);assert.notDeepEqual(visits(old).map(p=>p.name),visits(young).map(p=>p.name));});
+test(6,'늙크크 걷기 상한·휴식',()=>{assert(h.get().days.every(d=>d.items.filter(p=>p.id&&p.walk===3).length<=1));assert(h.get().days.some(d=>d.items.some(p=>p.kind==='휴식')));});
+test(7,'영크크 일몰 슬롯',()=>{h.ctx.dest='리마';h.trend.mode='young';h.trend.picks=['리마|아모르 공원'];h.emit();const golden=h.get().days.flatMap(d=>d.items.map(p=>({p,s:d.sunset}))).filter(x=>x.p.golden);assert(golden.length>0);for(const x of golden)assert.equal(x.p.time.split('–')[0],`${String(Math.floor(x.s.arrival/60)).padStart(2,'0')}:${String(Math.round(x.s.arrival%60)).padStart(2,'0')}`);});
+test(8,'담은 두 장소 배치와 요약',()=>{h.ctx.dest='후쿠오카';h.trend.picks=['후쿠오카|구시다 신사','후쿠오카|커낼시티 하카타'];h.emit();assert.equal(visits(h.get()).filter(p=>p.picked).length,2);assert.match(h.api.summaryText(),/담은 곳 2/);});
+test(9,'담기 해제 시 제외',()=>{h.trend.picks=['후쿠오카|커낼시티 하카타'];h.emit();assert(!visits(h.get()).some(p=>p.name==='구시다 신사'));});
+test(10,'담은 곳 초과 안내',()=>{h.ctx.start='2026-10-21';h.ctx.end='2026-10-21';h.trend.picks=data.cities['후쿠오카'].places.map(p=>'후쿠오카|'+p.name);h.emit();assert(h.get().unplaced.length>0);assert.match(h.root.innerHTML,/다 못 넣은 담은 곳/);});
+test(11,'seed 저장·결정성·담은 곳 보존',()=>{const storage=new Map(),a=harness(storage);a.ctx.dest='후쿠오카';a.ctx.start='2026-10-21';a.ctx.end='2026-10-25';a.trend.picks=['후쿠오카|커낼시티 하카타'];a.emit();const before=a.get();a.emit();assert.deepEqual(a.get(),before);a.shuffle();const after=a.get();assert(after.seed>before.seed);assert(visits(after).some(p=>p.picked));const b=harness(storage);Object.assign(b.ctx,a.ctx);b.trend.picks=[...a.trend.picks];b.emit();assert.deepEqual(b.get(),after);});
+test(12,'속도별 하루 최대치 및 순서/시간 유효',()=>{for(const pace of ['여유롭게','보통','빡빡하게']){const a=harness();a.ctx.dest='후쿠오카';a.ctx.start='2026-10-21';a.ctx.end='2026-10-25';a.ctx.pace=pace;a.emit();const cap=pace==='빡빡하게'?6:pace==='여유롭게'?4:5;assert(a.get().days.every(d=>d.visits<=cap));for(const d of a.get().days){let end=d.start;for(const p of d.items){assert(p.end<=d.finish);assert(p.end>=end);end=p.end;}}}});
+test(13,'요약 텍스트',()=>assert.match(h.api.summaryText(),/후쿠오카 0박 1일/));
+out.push({n:14,name:'375px',status:'BROWSER_REQUIRED'});
+test(15,'budget/stay 미존재',()=>assert(h.get().days.length));
+test(16,'외부 요청 없는 코스 엔진',()=>assert(!/\b(?:fetch|XMLHttpRequest|WebSocket)\s*\(/.test(code)));
+test(17,'26개 도시 지원과 미지원 도시 안내',()=>{assert.equal(Object.keys(data.cities).length,26);const a=harness();a.ctx.dest='리마';a.emit();assert.equal(a.get().days.length,3);a.ctx.dest='지원안함';a.emit();assert.match(a.root.innerHTML,/코스를 준비 중/);});
+test(18,'도쿄 여름·겨울 일몰 ±10분',()=>{for(const [date,expected] of [['2026-06-21',1140],['2026-12-21',990]]){const a=harness();a.ctx.dest='도쿄';a.ctx.start=date;a.ctx.end=date;a.emit();assert(Math.abs(a.get().days[0].sunset.minutes-expected)<=10);}});
+test('extra','기념품 담기 및 26개 도시 시간 유효',()=>{for(const city of Object.keys(data.cities)){const a=harness();a.ctx.dest=city;a.ctx.start='2026-10-21';a.ctx.end='2026-10-27';a.trend.picks=[city+'|'+data.cities[city].places.find(p=>p.kind==='기념품').name];a.emit();const r=a.get();assert(r.days.length===7);assert(visits(r).some(p=>p.kind==='기념품'&&p.picked)||r.unplaced.length);for(const d of r.days)assert(d.items.every(p=>p.end<=d.finish));}});
+console.log(JSON.stringify(out,null,2));if(out.some(r=>r.status==='FAIL'))process.exitCode=1;

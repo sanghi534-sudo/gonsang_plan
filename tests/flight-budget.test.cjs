@@ -1,0 +1,12 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const events={},ctx={dest:'리마',start:'2026-10-21',end:'2026-11-25',guests:{adult:3,child:0,infant:0},flight:{home:'SEL',type:'왕복',reverse:false,cabin:'일반석'}},q={city:ctx.dest,start:ctx.start,end:ctx.end,guests:{...ctx.guests},...ctx.flight};
+const entries={},notice={textContent:''},document={getElementById:id=>id==='flight-budget-status'?notice:null,addEventListener:(k,f)=>events[k]=f};
+const budget={set(k,amount,cur){entries[k]={amount,cur};return true;},clear(k){delete entries[k];},get:()=>entries};
+vm.runInNewContext(fs.readFileSync('flight-budget.js','utf8'),{window:{TripContext:()=>ctx,TripBudget:budget},document});
+const select=(amountKrw,query=q)=>events['tripflight:select']({detail:{version:1,currency:'KRW',amountKrw,query}});
+select(4263600);assert.equal(entries.air.amount,4263600);assert.match(notice.textContent,/전체 여행자/);
+select(-1);assert.equal(entries.air.amount,4263600);
+select(999,{...q,city:'도쿄'});assert.equal(entries.air.amount,4263600);
+ctx.start='2026-10-22';events['tripcontext:change']();assert.equal(entries.air,undefined);
+ctx.start=q.start;select(4263600);budget.set('air',5000000,'KRW');ctx.guests.adult=2;events['tripcontext:change']();assert.equal(entries.air.amount,5000000);
+console.log('PASS: party total, invalid/stale selections, stale automatic cost removal, manual budget preservation');
