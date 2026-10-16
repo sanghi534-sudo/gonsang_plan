@@ -147,7 +147,8 @@
     @keyframes srspin{to{transform:rotate(360deg)}}
     .sr-card{cursor:pointer;border-radius:16px;transition:box-shadow .15s}
     .sr-card.hl{box-shadow:0 0 0 3px #1d735a}
-    .sr-photo{position:relative;aspect-ratio:4/3;border-radius:16px;display:grid;place-items:center;font-size:44px;background:linear-gradient(135deg,#e4f3ed,#d9f17c55)}
+    .sr-photo{position:relative;overflow:hidden;aspect-ratio:4/3;border-radius:16px;display:grid;place-items:center;font-size:44px;background:linear-gradient(135deg,#e4f3ed,#d9f17c55)}
+    .sr-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
     .sr-badge{position:absolute;left:10px;top:10px;background:#fff;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.15)}
     .sr-heart{position:absolute;right:10px;top:8px;font-size:22px;color:#fff;text-shadow:0 0 3px #0008;background:none;border:0;cursor:pointer}
     .sr-heart.on{color:#e0245e}
@@ -215,7 +216,7 @@
     const spec = [s.bedrooms != null && `침실 ${s.bedrooms}개`, s.beds != null && `침대 ${s.beds}개`, s.baths != null && `욕실 ${s.baths}개`].filter(Boolean).join(' · ');
     const rating = s.rating != null ? `★ ${s.rating.toFixed(2).replace(/0$/, '')}${s.reviews != null ? ` (${s.reviews.toLocaleString('ko-KR')})` : ''}` : '';
     return `<article class="sr-card" data-id="${s.id}">
-      <div class="sr-photo">${iconOf(s.type)}<span class="sr-badge">${s.lat == null ? '위치 미확인' : esc(s.type || '숙소')}</span><button class="sr-heart" type="button" aria-label="저장">♥</button></div>
+      <div class="sr-photo">${iconOf(s.type)}${s.imageUrl ? `<img src="${esc(s.imageUrl)}" alt="${esc(s.name)}" loading="lazy" referrerpolicy="no-referrer">` : ''}<span class="sr-badge">${s.lat == null ? '위치 미확인' : esc(s.type || '숙소')}</span><button class="sr-heart" type="button" aria-label="저장">♥</button></div>
       <div class="sr-row"><b>${esc(s.name)}</b><span>${rating}</span></div>
       ${s.area ? `<div class="sr-sub">${esc(s.area)}</div>` : ''}
       ${s.highlight ? `<div class="sr-sub">${esc(s.highlight)}</div>` : ''}
@@ -310,6 +311,11 @@
     }
   }
   $('#stSearch').addEventListener('click', runSearch);
+
+  // 이미지 주소가 깨졌으면 이미지를 지우고 아이콘 배경만 보여 준다 (error 는 버블링되지 않아 캡처 단계에서 받는다)
+  document.addEventListener('error', e => {
+    if (e.target && e.target.tagName === 'IMG' && e.target.closest && e.target.closest('.sr-photo')) e.target.remove();
+  }, true);
 
   // 카드 <-> 지도 핀 연동 (오버레이는 body 아래에 있으므로 document 에서 위임)
   document.addEventListener('mouseover', e => {
