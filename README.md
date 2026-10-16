@@ -17,6 +17,10 @@
 
 > 항공 · 맛집 결과 등 일부 화면은 아직 모의(데모) 또는 샘플 데이터입니다. 실제 가격과 예약 정보는 각 서비스에서 확인해 주세요.
 
+<p align="center">
+  <img src="assets/brand/gonsang-plan-thumbnail.png" alt="곤상플랜 썸네일 - 설렘은 가득, 주머니 사정까지!" width="100%">
+</p>
+
 ## 로컬 실행
 
 1. `.env.example`을 복사해 `.env` 파일을 만들고 Amadeus 테스트 API Key와 Secret을 입력합니다.
