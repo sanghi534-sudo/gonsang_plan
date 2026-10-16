@@ -101,6 +101,7 @@ async function searchFlights(url, res) {
 // 숙소 검색(stay-search.mjs)과 여행 조건 페이지 정적 파일
 const STATIC = {
   '/trip-conditions.html': ['trip-conditions.html', 'text/html; charset=utf-8'],
+  '/favicon.svg': ['favicon.svg', 'image/svg+xml'],
   '/trip-summary.html': ['trip-summary.html', 'text/html; charset=utf-8'],
   '/budget.js': ['budget.js', 'text/javascript; charset=utf-8'],
   '/stay.js': ['stay.js', 'text/javascript; charset=utf-8'],
