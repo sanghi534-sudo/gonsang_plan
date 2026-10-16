@@ -1505,6 +1505,8 @@ window.FOOD_TREND_DATA = null;
     try {
       query=D.normalize(input); offers=D.buildOffers(query); if(!offers.length)throw Error('왕복 비행시간에 비해 일정이 짧아요. 오는 날짜를 늦춰 다시 조회해 주세요.');sort='best';resetFilters();
       const previous=load('gonsang-flight-selection-v1',null); selected=previous?.query && keyOf(previous.query)===keyOf(query)?previous:null;
+      // 예산 연동: 같은 조건의 선택이 복원되면 항공 금액을 다시 채우고, 아니면 비운다.
+      document.dispatchEvent(new CustomEvent(selected?'tripflight:select':'tripflight:deselect',{detail:selected}));
       renderFrame(); root.scrollIntoView({behavior:'smooth',block:'start'});
     } catch(error) { root.innerHTML=`<div class="fd-intro"><span class="fd-chip">DEMO</span><h3>검색 조건을 확인해 주세요</h3><p role="status">${e(error.message)}</p></div>`; }
   }
@@ -1814,6 +1816,17 @@ window.FOOD_TREND_DATA = null;
     $$('.ftab').forEach(button=>button.classList.toggle('on',button.dataset.v==='왕복'));
     $$('.opts[data-key="airClass"] .opt').forEach(button=>button.classList.toggle('on',button.textContent==='일반석'));
     view=new Date(start.getFullYear(),start.getMonth(),1);closeAll();renderCal();renderGuest();renderAll();searchFlightDemo();
+  });
+
+  /* ---------- 항공 선택 -> 예산 '항공' ---------- */
+  // amountKrw 는 탑승객 전체 합계(원화). 사용자가 예산 패널에 직접 입력한 금액은 지우지 않는다.
+  let airFromFlight = false;
+  document.addEventListener('tripflight:select', e => {
+    const amount = e.detail && e.detail.amountKrw;
+    if (window.TripBudget && Number.isFinite(amount) && amount > 0 && window.TripBudget.set('air', amount, 'KRW')) airFromFlight = true;
+  });
+  document.addEventListener('tripflight:deselect', () => {
+    if (airFromFlight && window.TripBudget) { window.TripBudget.clear('air'); airFromFlight = false; }
   });
 
   /* ---------- 검색 / 저장 ---------- */

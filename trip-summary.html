@@ -28,7 +28,7 @@
 
   /* ===== 하단: 트리플 스타일 (탭 바 · 본문 · 회색 사이드) ===== */
   .plan{margin:0 0 80px;display:grid;grid-template-columns:minmax(16px,1fr) minmax(0,1060px) 340px minmax(16px,1fr);align-items:start}
-  .tabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);background:var(--teal-d);margin-bottom:24px}
+  .tabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);background:var(--teal-d);margin-bottom:24px}
   .tab{padding:18px 0 16px;border-bottom:4px solid transparent;color:rgba(255,255,255,.72);font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;gap:10px}
   .tab i{font-style:normal;font-size:22px}
   .tab:hover{color:#fff;background:rgba(255,255,255,.08)}
@@ -83,6 +83,41 @@
   .ck.done{background:var(--teal-soft);border-color:var(--teal-soft)}
   .ck.done .t{text-decoration:line-through;color:#6f9a8b}
 
+  /* 달력형 보기 (일정표 · 날씨 공용) */
+  .cal-scroll{overflow-x:auto;padding-bottom:4px}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,minmax(118px,1fr));gap:6px;min-width:840px}
+  .cal-dow{text-align:center;font-size:12px;font-weight:800;color:var(--sub);padding:6px 0}
+  .cal-dow.sun,.cal-cell.sun .cal-num{color:#c9483f}
+  .cal-dow.sat,.cal-cell.sat .cal-num{color:#3a64a8}
+  .cal-cell{min-height:96px;border-radius:14px;padding:6px;background:var(--soft)}
+  .cal-cell.in{background:#fff;border:1px solid var(--line)}
+  .cal-num{font-size:12px;font-weight:700;color:var(--sub);margin:0 2px 4px}
+  .cal-day{display:block;width:100%;text-align:left;border-radius:10px;padding:5px;border:1px solid transparent}
+  .cal-day:hover{background:var(--soft)}
+  .cal-day.sel{border-color:var(--teal-d);background:var(--teal-soft)}
+  .cal-day b{display:block;font-size:12px;color:var(--teal-d);margin-bottom:2px}
+  .ev{display:block;margin-top:3px;padding:2px 6px;border-radius:6px;font-size:11px;line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:var(--gray)}
+  .ev em{font-style:normal;font-weight:700;color:var(--teal-d);margin-right:3px}
+  .ev.k-항공{background:#e8f0fb}.ev.k-숙소{background:#f3ecfa}.ev.k-관광{background:var(--teal-soft)}.ev.k-맛집{background:#fff1e0}
+  .cal-cell .wx-card{border:0;box-shadow:none;padding:2px 0}
+  .cal-cell .wx-ico{font-size:34px;margin:2px 0}
+  .cal-day-hint{margin:10px 0 0;font-size:12px;color:var(--sub)}
+
+  /* 날씨 */
+  .wx-sum{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+  .wx-tip{padding:10px 14px;border-radius:12px;background:var(--teal-soft);color:var(--teal-d);font-size:13px;font-weight:700}
+  .wx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .wx-card{border:1px solid var(--line);border-radius:16px;padding:14px;box-shadow:0 2px 10px rgba(0,0,0,.05);text-align:center}
+  .wx-d{font-size:13px;font-weight:800}
+  .wx-ico{font-size:38px;margin:8px 0 2px}
+  .wx-t{font-size:12px;color:var(--sub);min-height:18px}
+  .wx-temp{font-size:16px;font-weight:800;margin:6px 0 2px}
+  .wx-temp small{font-weight:600;color:var(--sub);font-size:13px}
+  .wx-rain{font-size:12px;color:var(--sub)}
+  .wx-src{display:inline-block;margin-top:8px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--gray);color:var(--sub)}
+  .wx-src.fc{background:var(--teal-soft);color:var(--teal-d)}
+  .wx-state{padding:48px 10px;text-align:center;color:var(--sub);font-size:14px;line-height:1.7}
+
   /* 사이드 */
   .seg2{display:flex;border:1px solid #cfd3d1;border-radius:999px;background:#fff;overflow:hidden;width:max-content;margin:10px 0 4px}
   .seg2 button{padding:6px 14px;font-size:12px;font-weight:700;color:var(--sub)}
@@ -128,13 +163,14 @@
     <button class="tab on" data-t="day" type="button"><i>🗓</i>일정표</button>
     <button class="tab" data-t="cost" type="button"><i>💰</i>예상 경비</button>
     <button class="tab" data-t="ck" type="button"><i>✅</i>준비 체크리스트</button>
+    <button class="tab" data-t="wx" type="button"><i>🌤</i>여행 날씨</button>
   </nav>
 
   <div class="panes">
     <div class="pane on" id="pane-day">
       <h3>🗓 일자별 일정표</h3>
       <p class="lead">확정한 항공·숙소·관광·맛집이 날짜 순서로 정리돼요.</p>
-      <div class="opts" id="days"></div>
+      <div id="days"></div>
       <div id="day"></div>
       <section id="tour-picks" hidden aria-label="일정에 담은 관광 후보"></section>
       <section id="course-picks" hidden aria-label="관광 탭에서 만든 Day별 추천 코스"></section>
@@ -153,6 +189,13 @@
       <div class="prog"><i id="ckBar"></i></div>
       <div id="checklist"></div>
       <p class="note">입국 요건과 규정은 자주 바뀝니다. 출국 전 외교부 해외안전여행(0404.go.kr)과 해당 국가 공식 사이트에서 최신 내용을 꼭 확인하세요.</p>
+    </div>
+
+    <div class="pane" id="pane-wx">
+      <h3>🌤 <span id="wxCity"></span> 여행 날씨</h3>
+      <p class="lead" id="wxLead"></p>
+      <div id="wxBody"><div class="wx-state">날씨를 불러오는 중이에요…</div></div>
+      <p class="note">날씨 데이터 제공: <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo.com</a> (CC BY 4.0)</p>
     </div>
   </div>
 
@@ -225,7 +268,17 @@
   const info = COUNTRY[country] || null;
   const cur = info ? info.cur : null;
   const bud = (saved && saved.budget) || {};
-  const fixed = k => bud[k] && Number.isFinite(bud[k].krw) ? bud[k].krw : null;
+  // 항공 탭에서 선택한 항공편 (같은 여행지·날짜·인원일 때만 사용)
+  let flightSel = null;
+  try {
+    const f = JSON.parse(localStorage.getItem('gonsang-flight-selection-v1') || 'null'), fq = f && f.query;
+    if (!sample && fq && f.offer && f.offer.outbound && fq.city === dest && fq.start === saved.start
+        && (fq.type === '편도' || fq.end === saved.end) && fq.guests && fq.guests.adult === g.adult) flightSel = f;
+  } catch (_) {}
+  const fixed = k => {
+    if (bud[k] && Number.isFinite(bud[k].krw)) return bud[k].krw;
+    return k === 'air' && flightSel && Number.isFinite(flightSel.amountKrw) ? flightSel.amountKrw : null;
+  };
   // 추천 모듈에서 담은 장소는 후보 목록으로 보존한다. 팀원의 일자별 일정 생성은 그대로 둔다.
   const tourPicks = Array.isArray(saved?.tour) ? saved.tour.filter(p => p && p.city === dest && typeof p.name === 'string').slice(0,50) : [];
   if (tourPicks.length) {
@@ -246,7 +299,7 @@
   $('#sGuest').textContent = guestText;
   $('#draft').textContent = sample ? '초안 · 예시 데이터' : '초안 · 일정 내용은 예시';
   $('#summary').innerHTML = [['여행지', dest], ['날짜', `${fmt(d0)} ~ ${fmt(d1)} (${nights}박)`], ['여행자', guestText],
-    ['항공', fixed('air') != null ? '확정' : '미정'], ['숙소', fixed('stay') != null ? '확정' : '미정'],
+    ['항공', flightSel ? `${flightSel.offer.airline} ${flightSel.offer.outbound.depart} 출발` : fixed('air') != null ? '확정' : '미정'], ['숙소', fixed('stay') != null ? '확정' : '미정'],
     ['관광', fixed('tour') != null ? '확정' : '미정'], ['맛집', fixed('food') != null ? '확정' : '미정']]
     .map(r => `<dt>${r[0]}</dt><dd>${esc(r[1])}</dd>`).join('');
 
@@ -277,9 +330,77 @@
     plan.push({ date, items });
   }
 
+  /* ---------- 선택한 항공편의 시간을 일정표에 반영 ---------- */
+  if (flightSel) {
+    const offer = flightSel.offer, legs = [offer.outbound, offer.inbound].filter(Boolean);
+    const toMin = t => { const [h, m] = String(t).split(':').map(Number); return h * 60 + m; };
+    const toHHMM = n => `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`;
+    const keyOfDay = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const HOME = ['ICN', 'GMP', 'PUS', 'CJU'];
+    const perLeg = fixed('air') != null ? fixed('air') / legs.length : 0;
+    const flightsOf = p => p.items.filter(x => x.flight);
+    const others = p => p.items.filter(x => !x.flight);
+    // 임의로 만들어 둔 항공 항목은 선택한 항공편으로 교체한다
+    plan.forEach(p => { p.items = p.items.filter(x => x.k !== '항공'); });
+    legs.forEach(l => {
+      const idx = plan.findIndex(p => keyOfDay(p.date) === l.date);
+      if (idx < 0) return;
+      plan[idx].items.push({ t: l.depart, k: '항공', flight: true, c: perLeg,
+        n: `${offer.airline} ${l.origin} → ${l.destination}`,
+        m: `${l.depart} 출발 → ${l.arrive}${l.dayOffset ? ` (+${l.dayOffset}일)` : ''} 도착 · ${l.stops ? `경유 ${l.stops}회${l.via ? ` (${l.via})` : ''}` : '직항'}` });
+    });
+    // 같은 날 다른 항목을 base 이후로 밀어 겹치지 않게(60분 간격) 한다. 22시 이후로 밀리는 항목은 뺀다(체크인은 유지).
+    const pushAfter = (p, base) => {
+      let t = base;
+      p.items = flightsOf(p).concat(others(p).sort((a, b) => toMin(a.t) - toMin(b.t)).filter(x => {
+        const m = Math.max(toMin(x.t), t);
+        if (m > 1320 && x.k !== '숙소') return false;
+        x.t = toHHMM(Math.min(m, 1410)); t = m + 60; return true;
+      }));
+    };
+    // 비행기 출발 3시간 전까지 끝나도록 앞으로 당긴다. 새벽 6시 전이 되면 뺀다.
+    const pullBefore = (p, depart) => {
+      let limit = depart - 180;
+      const kept = others(p).sort((a, b) => toMin(b.t) - toMin(a.t)).filter(x => {
+        const m = Math.min(toMin(x.t), limit); x.t = toHHMM(m); limit = m - 60; return m >= 360;
+      });
+      p.items = flightsOf(p).concat(kept);
+    };
+    legs.forEach(l => {
+      const idx = plan.findIndex(p => keyOfDay(p.date) === l.date);
+      if (idx < 0) return;
+      if (HOME.includes(l.destination)) { pullBefore(plan[idx], toMin(l.depart)); return; }   // 귀국편
+      const arrIdx = idx + (l.dayOffset || 0);                                                 // 현지 도착편
+      if (!plan[arrIdx]) return;
+      if (arrIdx !== idx) {                       // 다음 날 도착: 출발일 일정은 비우고, 숙소 체크인만 도착일로 옮긴다
+        plan[arrIdx].items = others(plan[idx]).filter(x => x.k === '숙소').map(x => ({ ...x, t: toHHMM(toMin(l.arrive) + 90) })).concat(plan[arrIdx].items);
+        plan[idx].items = flightsOf(plan[idx]);
+      }
+      pushAfter(plan[arrIdx], toMin(l.arrive) + 90);   // 입국·이동 시간 1시간 30분
+    });
+    plan.forEach(p => p.items.sort((a, b) => toMin(a.t) - toMin(b.t)));
+  }
+
+  // 달력 그리드: 여행 기간이 걸친 주(일~토)를 보여 주고, 여행일 칸에만 내용을 채운다.
+  function calendarHTML(cellFn) {
+    const start = new Date(d0); start.setDate(start.getDate() - start.getDay());
+    const end = new Date(d1); end.setDate(end.getDate() + (6 - end.getDay()));
+    const dow = DOW.map((n, i) => `<div class="cal-dow${i === 0 ? ' sun' : i === 6 ? ' sat' : ''}">${n}</div>`).join('');
+    let cells = '';
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const i = Math.round((d - d0) / 864e5), inTrip = i >= 0 && i < plan.length;
+      const label = (d.getDate() === 1 || i === 0 || +d === +start) ? `${d.getMonth() + 1}/${d.getDate()}` : d.getDate();
+      cells += `<div class="cal-cell${inTrip ? ' in' : ''}${d.getDay() === 0 ? ' sun' : d.getDay() === 6 ? ' sat' : ''}">
+        <div class="cal-num">${label}</div>${inTrip ? cellFn(plan[i], i) : ''}</div>`;
+    }
+    return `<div class="cal-scroll"><div class="cal-grid">${dow}${cells}</div></div>`;
+  }
+  const itineraryCell = (p, i) => `<button class="cal-day${i === curDay ? ' sel' : ''}" type="button" data-i="${i}"><b>Day ${i + 1}</b>${
+    p.items.map(x => `<span class="ev k-${x.k}"><em>${x.t}</em>${esc(x.n)}</span>`).join('')}</button>`;
+
   let curDay = 0;
   function renderDays() {
-    $('#days').innerHTML = plan.map((p, i) => `<button class="opt${i === curDay ? ' on' : ''}" data-i="${i}" type="button">Day ${i + 1} · ${fmt(p.date)}</button>`).join('');
+    $('#days').innerHTML = calendarHTML(itineraryCell) + '<p class="cal-day-hint">날짜를 누르면 아래에 하루 일정이 자세히 나와요.</p>';
     const p = plan[curDay];
     const sum = p.items.reduce((a, x) => a + (x.c || 0), 0);
     $('#day').innerHTML = `<p class="dtitle">Day ${curDay + 1} · ${fmt(p.date)} <span class="tag" style="margin-left:6px">하루 예상 ${won(sum)}</span></p>
@@ -287,7 +408,7 @@
         <div class="row"><div><b><span class="tag">${x.k}</span>${esc(x.n)}</b>${x.m ? `<div class="meta">${esc(x.m)}</div>` : ''}</div>
         <div class="cost">${x.c ? won(x.c) : '무료'}</div></div></div></li>`).join('')}</ul>`;
   }
-  $('#days').addEventListener('click', e => { const b = e.target.closest('.opt'); if (!b) return; curDay = +b.dataset.i; renderDays(); });
+  $('#days').addEventListener('click', e => { const b = e.target.closest('.cal-day'); if (!b) return; curDay = +b.dataset.i; renderDays(); });
   renderDays();
 
   /* ---------- 경비 ---------- */
@@ -346,11 +467,139 @@
   });
   renderCk();
 
+  /* ---------- 여행 날씨 (Open-Meteo: 키 불필요) ---------- */
+  // 예보는 약 16일 앞까지만 제공된다. 그보다 먼 날짜는 과거 3년 같은 날짜의 평균(기후)으로 대신한다.
+  const LATLNG = { 도쿄:[35.6762,139.6503], 오사카:[34.6937,135.5023], 교토:[35.0116,135.7681], 후쿠오카:[33.5902,130.4017],
+    방콕:[13.7563,100.5018], 다낭:[16.0544,108.2022], 타이베이:[25.033,121.5654], 싱가포르:[1.3521,103.8198], 홍콩:[22.3193,114.1694],
+    파리:[48.8566,2.3522], 런던:[51.5072,-0.1276], 로마:[41.9028,12.4964], 프라하:[50.0755,14.4378], 바르셀로나:[41.3874,2.1686],
+    뉴욕:[40.7128,-74.006], 샌프란시스코:[37.7749,-122.4194], 로스앤젤레스:[34.0522,-118.2437], 밴쿠버:[49.2827,-123.1207],
+    시드니:[-33.8688,151.2093], 괌:[13.4443,144.7937], 퀸스타운:[-45.0312,168.6626], 두바이:[25.2048,55.2708],
+    이스탄불:[41.0082,28.9784], 케이프타운:[-33.9249,18.4241], 칸쿤:[21.1619,-86.8515], 리마:[-12.0464,-77.0428] };
+  const wxInfo = c => c === 0 ? ['☀️','맑음'] : c <= 2 ? ['⛅','구름 조금'] : c === 3 ? ['☁️','흐림'] : c <= 48 ? ['🌫','안개']
+    : c <= 57 ? ['🌦','이슬비'] : c <= 65 ? ['🌧','비'] : c <= 67 ? ['🌧','어는 비'] : c <= 77 ? ['🌨','눈']
+    : c <= 82 ? ['🌦','소나기'] : c <= 86 ? ['🌨','눈 소나기'] : ['⛈','뇌우'];
+  const isWet = c => c != null && ((c >= 51 && c <= 67) || (c >= 80 && c <= 82) || c >= 95);
+  const ymdOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const DAILY = 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum';
+  const getJson = async url => { const r = await fetch(url); if (!r.ok) throw new Error('weather ' + r.status); return r.json(); };
+  const dailyMap = j => {
+    const d = (j && j.daily) || {}, out = {};
+    (d.time || []).forEach((t, i) => {
+      out[t] = { code: d.weather_code[i], max: d.temperature_2m_max[i], min: d.temperature_2m_min[i], rain: d.precipitation_sum[i],
+        prob: d.precipitation_probability_max ? d.precipitation_probability_max[i] : null };
+    });
+    return out;
+  };
+  const avg = a => { const v = a.filter(x => typeof x === 'number'); return v.length ? v.reduce((p, c) => p + c, 0) / v.length : null; };
+  const modeOf = a => {
+    const m = {}; a.filter(x => x != null).forEach(x => { m[x] = (m[x] || 0) + 1; });
+    const k = Object.keys(m).sort((p, q) => m[q] - m[p])[0];
+    return k == null ? null : +k;
+  };
+
+  async function locate() {
+    if (LATLNG[dest]) return LATLNG[dest];
+    const j = await getJson(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(dest)}&count=1&language=ko`);
+    const r = j.results && j.results[0];
+    if (!r) throw new Error('위치를 찾지 못했어요');
+    return [r.latitude, r.longitude];
+  }
+
+  async function loadWeather() {
+    const [lat, lng] = await locate();
+    const q = `latitude=${lat}&longitude=${lng}&timezone=auto`;
+    const limit = new Date(today.getTime() + 15 * 864e5);
+    const days = plan.map(p => ({ date: p.date, ds: ymdOf(p.date), fc: p.date >= today && p.date <= limit }));
+    const fcDays = days.filter(d => d.fc), clDays = days.filter(d => !d.fc);
+    const jobs = [];
+    if (fcDays.length) {
+      jobs.push(getJson(`https://api.open-meteo.com/v1/forecast?${q}&daily=${DAILY},precipitation_probability_max&start_date=${fcDays[0].ds}&end_date=${fcDays[fcDays.length - 1].ds}`)
+        .then(j => { const m = dailyMap(j); fcDays.forEach(d => { d.w = m[d.ds] || null; }); }));
+    }
+    if (clDays.length) {
+      const shift = (d, y) => new Date(d.getFullYear() - y, d.getMonth(), d.getDate());
+      const per = [1, 2, 3].map(y => ({ y, from: ymdOf(shift(clDays[0].date, y)), to: ymdOf(shift(clDays[clDays.length - 1].date, y)) }));
+      jobs.push(Promise.all(per.map(r => getJson(`https://archive-api.open-meteo.com/v1/archive?${q}&daily=${DAILY}&start_date=${r.from}&end_date=${r.to}`).then(dailyMap).catch(() => ({}))))
+        .then(maps => clDays.forEach(d => {
+          const vals = maps.map((m, i) => m[ymdOf(shift(d.date, per[i].y))]).filter(Boolean);
+          d.w = vals.length ? { code: modeOf(vals.map(v => v.code)), max: avg(vals.map(v => v.max)), min: avg(vals.map(v => v.min)), rain: avg(vals.map(v => v.rain)), prob: null } : null;
+        })));
+    }
+    await Promise.all(jobs);
+    return days;
+  }
+
+  // 데이터가 없는 날은 앞뒤 일자(연속으로 비면 그 구간 바로 앞·뒤 일자)의 평균으로 채운다.
+  const hasW = d => d.w && d.w.max != null && d.w.min != null;
+  function fillGaps(days) {
+    let i = 0;
+    while (i < days.length) {
+      if (hasW(days[i])) { i++; continue; }
+      let j = i;
+      while (j < days.length && !hasW(days[j])) j++;
+      const prev = days[i - 1], next = days[j];            // 구간 바로 앞·뒤의 실제 데이터 일자
+      const known = [prev, next].filter(d => d && hasW(d));
+      if (known.length) {
+        const a = known.map(d => d.w);
+        for (let k = i; k < j; k++) {
+          // 날씨 상태는 더 가까운 쪽(같으면 앞쪽)을 따르고, 수치는 앞뒤 평균을 쓴다
+          const near = !known.includes(prev) ? next : !known.includes(next) ? prev : ((k - (i - 1)) <= (j - k) ? prev : next);
+          days[k].w = { code: near.w.code,
+            max: avg(a.map(w => w.max)), min: avg(a.map(w => w.min)), rain: avg(a.map(w => w.rain)), prob: null };
+          days[k].est = true;
+        }
+      }
+      i = j;
+    }
+    return days;
+  }
+
+  function renderWeather(days) {
+    fillGaps(days);
+    const ok = days.filter(d => d.w && d.w.max != null && d.w.min != null);
+    if (!ok.length) { $('#wxBody').innerHTML = '<div class="wx-state">이 날짜의 날씨 데이터를 가져오지 못했어요.<br>잠시 후 다시 열어 주세요.</div>'; return; }
+    const wet = ok.filter(d => isWet(d.w.code) || (d.w.rain || 0) >= 3).length;
+    const hi = Math.max(...ok.map(d => d.w.max)), lo = Math.min(...ok.map(d => d.w.min));
+    const tips = [];
+    if (wet) tips.push(`☔ 비 소식 ${wet}일 · 우산이나 우비를 챙기세요`);
+    if (hi >= 30) tips.push('🥵 낮 기온이 높아요 · 자외선 차단제와 물을 챙기세요');
+    if (lo <= 10) tips.push('🧥 아침저녁이 쌀쌀해요 · 겉옷을 준비하세요');
+    if (hi - lo >= 12) tips.push('🌡 일교차가 커요 · 겹쳐 입을 옷이 좋아요');
+    if (!tips.length) tips.push('👍 큰 날씨 변수는 없어 보여요');
+    const anyFc = days.some(d => d.fc), anyCl = days.some(d => !d.fc);
+    $('#wxLead').textContent = (anyFc && anyCl ? '가까운 날짜는 실제 예보, 먼 날짜는 과거 3년 같은 날짜 평균이에요.'
+      : anyFc ? '실제 일기예보예요. 출발이 가까워질수록 달라질 수 있어요.'
+      : '여행일이 예보 범위(약 16일)보다 멀어 과거 3년 같은 날짜 평균을 보여줘요. 실제 예보가 아니라 참고용이에요.');
+    $('#wxBody').innerHTML = `<div class="wx-sum">${tips.map(t => `<span class="wx-tip">${t}</span>`).join('')}</div>
+      ${calendarHTML((p, i) => {
+        const d = days[i];
+        if (!d || !d.w || d.w.max == null || d.w.min == null) return '<div class="wx-card"><div class="wx-t" style="margin-top:14px">정보 없음</div></div>';
+        const [ico, label] = wxInfo(d.w.code == null ? 3 : d.w.code);
+        const rain = d.w.prob != null ? `강수확률 ${Math.round(d.w.prob)}%` : `강수량 ${(d.w.rain || 0).toFixed(1)}mm`;
+        return `<div class="wx-card"><div class="wx-ico">${ico}</div><div class="wx-t">${label}</div>
+          <div class="wx-temp">${Math.round(d.w.max)}° <small>/ ${Math.round(d.w.min)}°</small></div><div class="wx-rain">${rain}</div>
+          <span class="wx-src${d.fc ? ' fc' : ''}">${d.fc ? '예보' : '과거 평균'}</span></div>`;
+      })}`;
+  }
+
+  $('#wxCity').textContent = dest;
+  $('#wxLead').textContent = `${fmt(d0)} ~ ${fmt(d1)} 날씨`;
+  let wxStarted = false;
+  function startWeather() {
+    if (wxStarted) return;
+    wxStarted = true;
+    loadWeather().then(renderWeather).catch(err => {
+      wxStarted = false;
+      $('#wxBody').innerHTML = `<div class="wx-state">날씨를 불러오지 못했어요.<br>${esc(err.message || '')}<br>네트워크를 확인하고 이 탭을 다시 열어 주세요.</div>`;
+    });
+  }
+
   /* ---------- 탭 · 기타 ---------- */
   $('#tabs').addEventListener('click', e => {
     const t = e.target.closest('.tab'); if (!t) return;
     $$('.tab').forEach(x => x.classList.toggle('on', x === t));
     $$('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + t.dataset.t));
+    if (t.dataset.t === 'wx') startWeather();
   });
   $('#print').addEventListener('click', () => window.print());
   // 창(iframe) 안에서 열렸을 때: 닫기 버튼으로 부모 창을 닫는다
