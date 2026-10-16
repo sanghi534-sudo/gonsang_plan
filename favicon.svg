@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="곤상플랜">
+  <!-- 임시 로고: index.html 의 브랜드 마크(초록 둥근 사각형 + ㄱ). 정식 로고가 나오면 이 파일만 교체하세요. -->
+  <rect width="64" height="64" rx="16" fill="#1d735a"/>
+  <text x="32" y="45" text-anchor="middle" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif" font-size="40" font-weight="800" fill="#ffffff">ㄱ</text>
+</svg>
