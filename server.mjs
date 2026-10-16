@@ -109,6 +109,7 @@ const STATIC = {
   '/flight-budget.js': ['flight-budget.js', 'text/javascript; charset=utf-8'],
   '/tour-catalog.js': ['tour-catalog.js', 'text/javascript; charset=utf-8'],
   '/tour-recommendations.js': ['tour-recommendations.js', 'text/javascript; charset=utf-8'],
+  '/tour-reels.js': ['tour-reels.js', 'text/javascript; charset=utf-8'],
   '/stay.js': ['stay.js', 'text/javascript; charset=utf-8'],
   '/travel-trends.js': ['travel-trends.js', 'text/javascript; charset=utf-8'],
   '/travel-trends-data.js': ['travel-trends-data.js', 'text/javascript; charset=utf-8'],
