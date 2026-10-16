@@ -826,19 +826,23 @@
   </div>
 
   <div class="pane" id="pane-food">
-    <h3>🍽 맛집 조건</h3>
-    <div class="field"><label>음식 종류 (복수 선택)</label>
-      <div class="opts" data-key="foodKind" data-mode="multi">
-        <button class="opt on" type="button">현지 음식</button><button class="opt" type="button">해산물</button><button class="opt" type="button">고기·구이</button><button class="opt" type="button">면·국물</button><button class="opt" type="button">카페·디저트</button><button class="opt" type="button">길거리 음식</button>
-      </div></div>
-    <div class="field"><label>1인 한 끼 예산</label>
-      <div class="opts" data-key="foodBudget" data-mode="single">
-        <button class="opt" type="button">1만원 이하</button><button class="opt on" type="button">1~3만원</button><button class="opt" type="button">3~5만원</button><button class="opt" type="button">5만원 이상</button>
-      </div></div>
-    <div class="field"><label>식사 조건 (복수 선택)</label>
-      <div class="opts" data-key="foodPref" data-mode="multi">
-        <button class="opt" type="button">웨이팅 적은 곳</button><button class="opt" type="button">예약 가능</button><button class="opt" type="button">한국어 메뉴</button><button class="opt" type="button">채식 가능</button>
-      </div></div>
+    <!-- 맛집 목록(캐치테이블식): 스타일·동작은 food.js 에 있다. 조건 칩은 공통 .opts 를 그대로 써서 요약·저장·맛집 트렌드와 연동된다 -->
+    <h3>🍽 맛집 찾기</h3>
+    <div id="foodWhen"></div>
+    <div class="opts fd-cats" data-key="foodKind" data-mode="multi">
+      <button class="opt cat" data-ic="🍱" type="button">현지 음식</button><button class="opt cat" data-ic="🦐" type="button">해산물</button><button class="opt cat" data-ic="🥩" type="button">고기·구이</button><button class="opt cat" data-ic="🍜" type="button">면·국물</button><button class="opt cat" data-ic="🍰" type="button">카페·디저트</button><button class="opt cat" data-ic="🌮" type="button">길거리 음식</button>
+    </div>
+    <div class="fd-filters">
+      <div><p class="lbl">1인 한 끼 예산</p>
+        <div class="opts" data-key="foodBudget" data-mode="single">
+          <button class="opt on" type="button">상관없음</button><button class="opt" type="button">1만원 이하</button><button class="opt" type="button">1~3만원</button><button class="opt" type="button">3~5만원</button><button class="opt" type="button">5만원 이상</button>
+        </div></div>
+      <div><p class="lbl">식사 조건</p>
+        <div class="opts" data-key="foodPref" data-mode="multi">
+          <button class="opt" type="button">웨이팅 적은 곳</button><button class="opt" type="button">예약 가능</button><button class="opt" type="button">한국어 메뉴</button><button class="opt" type="button">채식 가능</button>
+        </div></div>
+    </div>
+    <div id="foodResults"></div>
     <!-- FOOD TREND DATA START -->
     <script id="food-trend-data">
 // food_trend.js 수신 후 아래 null을 생성된 window.FOOD_TREND_DATA 대입문으로 교체하세요.
@@ -1761,6 +1765,7 @@ window.FOOD_TREND_DATA = null;
 </script>
 <!-- FLIGHT DEMO CONTROLLER END -->
 <script src="stay.js"></script>
+<script src="food.js"></script>
 <script>
 (() => {
   const $ = (s, r = document) => r.querySelector(s);

@@ -111,6 +111,7 @@ const STATIC = {
   '/tour-recommendations.js': ['tour-recommendations.js', 'text/javascript; charset=utf-8'],
   '/tour-reels.js': ['tour-reels.js', 'text/javascript; charset=utf-8'],
   '/stay.js': ['stay.js', 'text/javascript; charset=utf-8'],
+  '/food.js': ['food.js', 'text/javascript; charset=utf-8'],
   '/travel-trends.js': ['travel-trends.js', 'text/javascript; charset=utf-8'],
   '/travel-trends-data.js': ['travel-trends-data.js', 'text/javascript; charset=utf-8'],
 };
