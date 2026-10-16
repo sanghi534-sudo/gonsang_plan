@@ -412,14 +412,17 @@
       if (user.length) replaced.add('관광');
     }
 
-    // 맛집: 맛집 탭에서 담은 식당과 선택한 예약 시간
-    let fp = {};
-    try { fp = JSON.parse(localStorage.getItem('gonsang-food-reserve-picks-v1') || '{}') || {}; } catch (_) {}
-    const meals = Object.values(fp).filter(p => p && p.dest === dest && dayIndex.has(p.date) && typeof p.name === 'string');
+    // 맛집: 맛집 탭에서 지정한 식사 (저장 시점의 TripFood 데이터: 날짜 · 식사 · 방문 희망 시간 · 1인 가격)
+    const food = saved && saved.food;
+    const DEFAULT_TIME = { '아침': '08:30', '점심': '12:30', '저녁': '18:30' };
+    const meals = food && food.city === dest && Array.isArray(food.picks)
+      ? food.picks.filter(p => p && p.city === dest && dayIndex.has(p.date) && typeof p.name === 'string' && p.name) : [];
     meals.forEach(p => {
       const slotted = TIME.test(String(p.slot));
-      user.push({ idx: dayIndex.get(p.date), t: slotted ? pad(p.slot) : p.meal === '점심' ? '12:30' : '18:30', k: '맛집', n: p.name,
-        m: slotted ? `${pad(p.slot)} 예약 시간으로 선택` : '시간 미정 · 예상 시각', c: Number.isFinite(p.price) ? p.price : 0, user: true });
+      const label = p.meal || '식사';
+      user.push({ idx: dayIndex.get(p.date), t: slotted ? pad(p.slot) : (DEFAULT_TIME[p.meal] || '12:30'), k: '맛집', n: p.name,
+        m: `${slotted ? `${pad(p.slot)} 방문 희망 시간` : `${label} · 시간 미정(예상 시각)`}${p.sample ? ' · 예시 매장' : ''}`,
+        c: Number.isFinite(p.price) ? p.price : null, user: true });
     });
     if (meals.length) replaced.add('맛집');
     if (!replaced.size) return;
