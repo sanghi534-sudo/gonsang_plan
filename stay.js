@@ -75,7 +75,8 @@
         priceMin: st.min, priceMax: st.max,
         bedrooms: st.bedrooms, beds: st.beds, baths: st.baths,
         amenities: [...chips('stayAmenity'), ...chips('stayAmenityMore')],
-        buildings: chips('stayBuilding')
+        buildings: chips('stayBuilding'),
+        plan: planSegments()
       };
     },
     summaryText() {
@@ -84,6 +85,7 @@
       Object.keys(LABEL).forEach(k => { if (st[k]) parts.push(`${LABEL[k]} ${st[k]}${st[k] >= STEP_MAX ? '+' : ''}개 이상`); });
       if (g.amenities.length) parts.push(g.amenities.join(', '));
       if (g.buildings.length) parts.push(g.buildings.join(', '));
+      const ps = planSummary(); if (ps) parts.push(ps);
       return parts.join(' · ');
     },
     reset() {
@@ -183,12 +185,14 @@
         <div><div class="sr-title" id="srTitle"></div><span class="sr-note" id="srNote"></span></div>
         <div class="sr-tog" id="srTog"><button type="button" data-v="list" class="on">목록</button><button type="button" data-v="map">지도</button></div>
       </header>
+      <section class="sr-plan" id="srPlan" hidden></section>
       <div class="sr-body" id="srBody" data-v="list">
         <section class="sr-list" id="srList"></section>
-        <div class="sr-map"><div id="srMapEl"></div><div class="sr-legend" id="srLegend"></div></div>
+        <div class="sr-map"><div id="srMapEl"></div></div>
       </div>`;
     pane.appendChild(overlay);   // 항공 탭처럼 현재 화면의 숙소 탭 하단에 표시
     overlay.querySelector('#srBack').addEventListener('click', closeResults);
+    bindPlanEvents();
     overlay.querySelector('#srTog').addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
       overlay.querySelectorAll('#srTog button').forEach(x => x.classList.toggle('on', x === b));
@@ -223,6 +227,7 @@
       ${spec ? `<div class="sr-sub">${spec}</div>` : ''}
       <div class="sr-price">${priceText(s, nights)}</div>
       ${s.freeCancel ? '<span class="sr-tag">취소 수수료 없음</span>' : ''}
+      ${pickHTML(s)}
       ${s.url ? `<div><a class="sr-link" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">출처 보기 ↗</a></div>` : ''}
     </article>`;
   }
@@ -273,6 +278,7 @@
 
   function renderResults(data, ctx) {
     const nights = nightsOf(ctx);
+    setPlanContext(ctx, data);
     $o('#srTitle').textContent = data.stays.length ? `${ctx.dest} 숙소 ${data.stays.length}개` : `${ctx.dest} 숙소를 찾지 못했어요`;
     $o('#srNote').textContent = (data.source === 'sample' ? '샘플 데이터 · ' : 'AI 웹 검색 · ') + (data.note || '');
     if (!data.stays.length) { showState('조건에 맞는 숙소를 찾지 못했어요.<br>가격 범위나 편의시설 조건을 줄여서 다시 검색해 보세요.'); renderMap(data, ctx.dest); return; }
@@ -334,6 +340,196 @@
     }
   });
 
+  /* ---------- 숙박 일정: 여행 날짜 중 숙소별로 숙박 일자를 나눠 선택 ---------- */
+  var plan = { snaps: {}, byDate: {} };      // byDate[YYYY-MM-DD(숙박일)] = snaps 키
+  var tripNights = [], planSel = { a: 0, b: -1, pending: null }, planData = null, planCtx = null, budgetOwned = false;
+  const DOW_KO = ['일', '월', '화', '수', '목', '금', '토'];
+  const PALETTE = ['#1d735a', '#3b6fd4', '#d9822b', '#8a4fc7', '#c2413b', '#12a3a3'];
+  const pad2 = n => String(n).padStart(2, '0');
+  const dstr = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  const addDays = (s0, n) => { const d = new Date(s0 + 'T00:00:00'); d.setDate(d.getDate() + n); return dstr(d); };
+  const mdOf = s0 => { const d = new Date(s0 + 'T00:00:00'); return `${d.getMonth() + 1}/${d.getDate()}`; };
+  const mdwOf = s0 => { const d = new Date(s0 + 'T00:00:00'); return `${d.getMonth() + 1}/${d.getDate()}(${DOW_KO[d.getDay()]})`; };
+  const snapKey = s0 => `${s0.name}|${s0.area || ''}`;
+  const colorOfKey = k => { const i = Object.keys(plan.snaps).indexOf(k); return PALETTE[(i < 0 ? 0 : i) % PALETTE.length]; };
+  const won0 = n => '₩' + Math.round(n).toLocaleString('ko-KR');
+
+  // 연속된 숙박일을 [시작, 체크아웃, 박수] 구간으로 묶는다
+  function segmentsOf(dates) {
+    const out = [];
+    dates.slice().sort().forEach(d => {
+      const last = out[out.length - 1];
+      if (last && addDays(last.to, 1) === d) { last.to = d; last.n++; } else out.push({ from: d, to: d, n: 1 });
+    });
+    return out.map(g => ({ from: g.from, out: addDays(g.to, 1), n: g.n }));
+  }
+  const segLabel = g => `${mdOf(g.from)} → ${mdOf(g.out)} (${g.n}박)`;
+
+  function planSegments() {
+    const byKey = {};
+    tripNights.forEach(d => { const k = plan.byDate[d]; if (k) (byKey[k] = byKey[k] || []).push(d); });
+    return Object.entries(byKey).flatMap(([k, dates]) => segmentsOf(dates).map(g => ({
+      name: plan.snaps[k].name, from: g.from, checkOut: g.out, nights: g.n,
+      priceKRWPerNight: plan.snaps[k].priceKRW, area: plan.snaps[k].area, url: plan.snaps[k].url
+    }))).sort((a, b) => a.from.localeCompare(b.from));
+  }
+  function planSummary() {
+    if (!tripNights.length) return '';
+    const got = tripNights.filter(d => plan.byDate[d]).length;
+    return got ? `숙박 ${got}/${tripNights.length}박 지정` : '';
+  }
+
+  function planTotals() {
+    let sum = 0, unknown = 0, assigned = 0;
+    tripNights.forEach(d => {
+      const k = plan.byDate[d]; if (!k) return;
+      assigned++;
+      const pr = plan.snaps[k].priceKRW;
+      if (pr == null) unknown++; else sum += pr;
+    });
+    return { sum, unknown, assigned, open: tripNights.length - assigned };
+  }
+
+  // 확정된 숙박 합계를 예산 패널의 공개 API 로 전달 (예산 코드는 수정하지 않는다)
+  function syncBudget() {
+    const B = window.TripBudget; if (!B || typeof B.set !== 'function') return;
+    const t = planTotals();
+    try {
+      if (t.assigned && t.sum > 0) { B.set('stay', Math.round(t.sum), 'KRW'); budgetOwned = true; }
+      else if (budgetOwned && typeof B.clear === 'function') { B.clear('stay'); budgetOwned = false; }
+    } catch (_) { /* 예산 패널이 없어도 일정 선택은 계속 동작 */ }
+  }
+  function planChanged() {
+    renderPlan(); refreshCards(); syncBudget();
+    document.dispatchEvent(new CustomEvent('tripstay:change', { detail: api.get() }));
+  }
+  function refreshCards() {
+    if (!planData || !planData.stays.length) return;
+    $o('#srList').innerHTML = planData.stays.map(s0 => cardHTML(s0, nightsOf(planCtx))).join('');
+  }
+
+  function setPlanContext(ctx, data) {
+    planCtx = ctx; planData = data;
+    tripNights = [];
+    if (ctx.start && ctx.end) {
+      const n = nightsOf(ctx);
+      for (let i = 0; i < n; i++) tripNights.push(addDays(ctx.start, i));
+    }
+    Object.keys(plan.byDate).forEach(d => { if (!tripNights.includes(d)) delete plan.byDate[d]; });   // 날짜가 바뀌면 범위 밖 지정은 정리
+    const used = new Set(Object.values(plan.byDate));
+    Object.keys(plan.snaps).forEach(k => { if (!used.has(k)) delete plan.snaps[k]; });
+    planSel = { a: 0, b: tripNights.length - 1, pending: null };    // 기본값: 전체 기간
+    renderPlan(); syncBudget();
+  }
+
+  function pickHTML(s0) {
+    if (!tripNights.length) return '<button class="sr-pick" type="button" disabled>상단에서 여행 날짜를 먼저 선택하세요</button>';
+    const key = snapKey(s0);
+    const mine = tripNights.filter(d => plan.byDate[d] === key);
+    const tag = mine.length ? `<span class="sr-tag sr-on">선택됨 · ${segmentsOf(mine).map(segLabel).join(', ')}</span>` : '';
+    const range = planSel.b >= planSel.a
+      ? `${mdOf(tripNights[planSel.a])} → ${mdOf(addDays(tripNights[planSel.b], 1))} (${planSel.b - planSel.a + 1}박)` : '';
+    return `${tag}<div><button class="sr-pick" type="button" data-key="${esc(key)}" data-id="${s0.id}">${range ? `이 숙소로 ${esc(range)} 선택` : '기간을 먼저 선택하세요'}</button></div>`;
+  }
+
+  function renderPlan() {
+    const box = $o('#srPlan'); if (!box) return;
+    box.hidden = false;
+    if (!tripNights.length) {
+      box.innerHTML = '<div class="srp-head"><b>숙박 일정</b><span class="srp-sub">상단에서 여행 날짜(체크인·체크아웃)를 선택하면 숙박 일자별로 숙소를 나눠 고를 수 있어요.</span></div>';
+      return;
+    }
+    const chips = tripNights.map((d, i) => {
+      const k = plan.byDate[d], inSel = i >= planSel.a && i <= planSel.b;
+      const col = k ? colorOfKey(k) : '#bbb';
+      return `<button class="srp-night${inSel ? ' sel' : ''}${k ? ' set' : ''}" type="button" data-i="${i}" style="--c:${col}">
+        <b>${mdwOf(d)}</b><small>${k ? esc(plan.snaps[k].name) : '미정'}</small></button>`;
+    }).join('');
+    const segs = planSegments();
+    const t = planTotals();
+    const selLabel = planSel.pending !== null ? `${mdOf(tripNights[planSel.a])} 선택됨 · 마지막 숙박일을 눌러 기간을 정하세요`
+      : planSel.b >= planSel.a ? `선택 기간 ${mdOf(tripNights[planSel.a])} → ${mdOf(addDays(tripNights[planSel.b], 1))} (${planSel.b - planSel.a + 1}박)` : '';
+    box.innerHTML = `
+      <div class="srp-head"><b>숙박 일정 · ${tripNights.length}박</b>
+        <span class="srp-sub">숙소를 바꾸려면 숙박일을 눌러 기간을 정한 뒤, 숙소 카드에서 "선택"을 누르세요.</span></div>
+      <div class="srp-nights">${chips}</div>
+      <div class="srp-foot"><span>${esc(selLabel)}</span><button class="srp-all" type="button" data-a="all">전체 기간</button></div>
+      ${segs.length ? `<ul class="srp-list">${segs.map(g => `<li><i style="background:${colorOfKey(Object.keys(plan.snaps).find(k => plan.snaps[k].name === g.name))}"></i>
+        <span>${esc(segLabel({ from: g.from, out: g.checkOut, n: g.nights }))}</span><b>${esc(g.name)}</b>
+        <em>${g.priceKRWPerNight != null ? won0(g.priceKRWPerNight * g.nights) : '가격 미확인'}</em>
+        <button type="button" class="srp-rm" data-from="${g.from}" data-n="${g.nights}">삭제</button></li>`).join('')}</ul>` : ''}
+      <div class="srp-total">숙박 합계 <strong>${t.assigned ? won0(t.sum) : '미정'}</strong>
+        ${t.open ? `<span class="srp-warn">숙소 미정 ${t.open}박</span>` : (t.assigned ? '<span class="srp-ok">모든 숙박일 지정 완료</span>' : '')}
+        ${t.unknown ? `<span class="srp-warn">가격 미확인 ${t.unknown}박 제외</span>` : ''}</div>`;
+  }
+
+  function bindPlanEvents() {
+    overlay.addEventListener('click', e => {
+      const night = e.target.closest('.srp-night');
+      if (night) {
+        e.stopPropagation();
+        const i = +night.dataset.i;
+        if (planSel.pending === null) planSel = { a: i, b: i, pending: i };
+        else planSel = { a: Math.min(planSel.pending, i), b: Math.max(planSel.pending, i), pending: null };
+        renderPlan(); refreshCards(); return;
+      }
+      if (e.target.closest('.srp-all')) {
+        e.stopPropagation();
+        planSel = { a: 0, b: tripNights.length - 1, pending: null };
+        renderPlan(); refreshCards(); return;
+      }
+      const rm = e.target.closest('.srp-rm');
+      if (rm) {
+        e.stopPropagation();
+        for (let i = 0; i < +rm.dataset.n; i++) delete plan.byDate[addDays(rm.dataset.from, i)];
+        planChanged(); return;
+      }
+      const pick = e.target.closest('.sr-pick');
+      if (pick && !pick.disabled) {
+        e.stopPropagation();
+        const stay = planData.stays.find(x => String(x.id) === pick.dataset.id);
+        if (!stay || planSel.b < planSel.a) return;
+        const key = snapKey(stay);
+        plan.snaps[key] = { name: stay.name, area: stay.area, priceKRW: stay.priceKRW, lat: stay.lat, lng: stay.lng, url: stay.url };
+        // 같은 숙소를 같은 기간에 다시 누르면 선택 취소, 아니면 해당 숙박일을 이 숙소로 지정
+        const range = tripNights.slice(planSel.a, planSel.b + 1);
+        const allSame = range.every(d => plan.byDate[d] === key);
+        range.forEach(d => { if (allSame) delete plan.byDate[d]; else plan.byDate[d] = key; });
+        planChanged();
+      }
+    });
+  }
+
+  const pcss = document.createElement('style');
+  pcss.textContent = `
+    .sr-plan{margin:6px 0 14px;padding:14px 16px;border:1px solid #dfe2e0;border-radius:16px;background:#f7f8f6}
+    .srp-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin-bottom:10px}
+    .srp-head b{font-size:16px}
+    .srp-sub{font-size:12px;color:#717171}
+    .srp-nights{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+    .srp-night{flex:none;min-width:96px;padding:8px 10px;border-radius:12px;border:2px solid #ddd;background:#fff;text-align:left;cursor:pointer;border-left:6px solid var(--c)}
+    .srp-night b{display:block;font-size:13px}
+    .srp-night small{display:block;font-size:11px;color:#717171;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .srp-night.sel{border-color:#1d735a;border-left-color:var(--c);background:#e4f3ed}
+    .srp-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;font-size:13px;color:#444}
+    .srp-all{font-size:12px;font-weight:700;text-decoration:underline;color:#1d735a;background:none;border:0;cursor:pointer}
+    .srp-list{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+    .srp-list li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:#fff;font-size:13px}
+    .srp-list li i{width:10px;height:10px;border-radius:50%;flex:none}
+    .srp-list li b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .srp-list li em{font-style:normal;font-weight:700}
+    .srp-rm{font-size:12px;color:#717171;text-decoration:underline;background:none;border:0;cursor:pointer}
+    .srp-total{margin-top:10px;font-size:14px;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
+    .srp-total strong{font-size:18px;color:#1d735a}
+    .srp-warn{font-size:12px;color:#b3541e}
+    .srp-ok{font-size:12px;color:#1d735a}
+    .sr-pick{margin-top:8px;width:100%;padding:9px 10px;border-radius:10px;border:1px solid #1d735a;background:#fff;color:#1d735a;font-weight:700;font-size:13px;cursor:pointer}
+    .sr-pick:hover:not(:disabled){background:#e4f3ed}
+    .sr-pick:disabled{border-color:#ccc;color:#999;cursor:default}
+    .sr-tag.sr-on{background:#e4f3ed;color:#1d735a;font-weight:700}
+  `;
+  document.head.appendChild(pcss);
+
   /* ---------- 전 세계 지도 요소 (숙소 검색 결과 지도에 함께 표시) ---------- */
   // 대륙별 색상과 도시 좌표. 이름은 상단 여행지 목록(trip-conditions.html)과 같다.
   const WORLD = {
@@ -345,16 +541,6 @@
     '중동·아프리카': ['#c2413b', [['두바이', 25.2048, 55.2708], ['이스탄불', 41.0082, 28.9784], ['케이프타운', -33.9249, 18.4241]]],
     '중남미': ['#12a3a3', [['칸쿤', 21.1619, -86.8515], ['리마', -12.0464, -77.0428]]]
   };
-  const wcss = document.createElement('style');
-  wcss.textContent = `
-    .sr-legend{position:absolute;left:54px;right:12px;top:10px;z-index:500;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
-    .sr-legend .stw-chip{pointer-events:auto}
-    .stw-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;border:1px solid #ddd;background:#fff;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)}
-    .stw-chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
-    .stw-chip:hover{border-color:#1d735a}
-    .stw-chip.on{background:#e4f3ed;border-color:#1d735a}
-  `;
-  document.head.appendChild(wcss);
 
   // 결과 지도 위에 전 세계 도시 핀(대륙별 색상)을 한 번 깔고, 선택한 여행지를 강조한다.
   let worldPins = {}, worldLayer = null;
@@ -367,17 +553,6 @@
         m.bindTooltip(name, { direction: 'top', offset: [0, -4] });
         worldPins[name] = m;
       });
-    });
-    const legend = $o('#srLegend');
-    legend.innerHTML = '<button class="stw-chip on" type="button" data-c="전체">🌍 전체</button>' +
-      Object.entries(WORLD).map(([c, [color]]) => `<button class="stw-chip" type="button" data-c="${esc(c)}"><i style="background:${color}"></i>${esc(c)}</button>`).join('');
-    legend.addEventListener('click', e => {
-      const b = e.target.closest('.stw-chip'); if (!b) return;
-      e.stopPropagation();
-      legend.querySelectorAll('.stw-chip').forEach(c => c.classList.toggle('on', c === b));
-      if (b.dataset.c === '전체') { map.setView([25, 10], 2); return; }
-      const pts = WORLD[b.dataset.c][1].map(d => [d[1], d[2]]);
-      map.fitBounds(pts, { padding: [40, 40], maxZoom: 5 });
     });
   }
   function paintWorldPins(dest) {
