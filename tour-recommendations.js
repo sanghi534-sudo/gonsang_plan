@@ -4,22 +4,53 @@
 (() => {
   const host=document.getElementById('travel-trends-root'); if(!host)return;
   const root=document.createElement('section'); root.id='tour-recommendations'; host.prepend(root);
-  const catalog=window.GonsangTourCatalog || {}, giftCatalog=window.GonsangTourGifts || {}, all=[...Object.values(catalog).flat(),...Object.values(giftCatalog).flat()];
+  const catalog=window.GonsangTourCatalog || {}, extras=window.GonsangTourExtras || {}, giftCatalog=window.GonsangTourGifts || {}, all=[...Object.values(catalog).flat(),...Object.values(extras).flat(),...Object.values(giftCatalog).flat()];
   const known=new Set(all.map(p=>p.id)), STORE='gonsang-tour-picks-v1';
   let picked=[]; try { picked=JSON.parse(localStorage.getItem(STORE)||'[]'); } catch(_) {}
   const picks=new Set(Array.isArray(picked)?picked.filter(id=>known.has(id)):[]);
-  let category='전체', onlyPicked=false, previousCity='', imageStatus='idle', busy=false, mode='young';
+  let category='전체', onlyPicked=false, previousCity='', previousPreferences='', imageStatus='idle', busy=false, mode='young';
   try { mode=localStorage.getItem('gonsang-tour-mode-v1')==='old'?'old':'young'; } catch(_) {}
   const photos=new Map(), attempted=new Set();
+  let courseData={};try{courseData=JSON.parse(document.getElementById('course-data')?.textContent||'{}');}catch(_){}
   const isPicked=p=>picks.has(p.id)||window.TripCourse?.contains?.(p.city,p.name)===true;
   const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const context=()=>window.TripContext?.() || {};
   const cityNow=()=>context().dest?.trim() || '';
-  const ownPlaces=()=>Object.hasOwn(catalog,cityNow())?catalog[cityNow()]:[];
+  const ownPlaces=()=>Object.hasOwn(catalog,cityNow())?[...catalog[cityNow()],...(extras[cityNow()]||[])]:[];
   const ownGifts=()=>Object.hasOwn(giftCatalog,cityNow())?giftCatalog[cityNow()]:[];
   const ownCandidates=()=>[...ownPlaces(),...ownGifts()];
   const themeMap={'명소·랜드마크':['명소','전망','역사'],'자연·풍경':['자연','산책','전망'],'역사·문화':['역사','박물관'],'쇼핑':['쇼핑'],'테마파크':['테마파크','체험'],'박물관·미술관':['박물관'],'액티비티':['체험','테마파크']};
   const matching=p=>(context().tourThemes || []).some(t=>(themeMap[t] || []).includes(p.category));
+  function metaFor(p){return courseData.cities?.[p.city]?.places.find(x=>x.id===p.id)||{};}
+  function cityDistance(p){
+    const c=courseData.cities?.[p.city],m=metaFor(p);if(![c?.lat,c?.lng,m.lat,m.lng].every(Number.isFinite))return null;
+    const rad=n=>n*Math.PI/180,dlat=rad(m.lat-c.lat),dlng=rad(m.lng-c.lng);
+    return 6371*2*Math.asin(Math.min(1,Math.sqrt(Math.sin(dlat/2)**2+Math.cos(rad(c.lat))*Math.cos(rad(m.lat))*Math.sin(dlng/2)**2)));
+  }
+  function preferenceScore(p){
+    const ctx=context(),m=metaFor(p),km=cityDistance(p),walk=Number.isFinite(m.walk)?m.walk:2,stay=Number.isFinite(m.stay)?m.stay:60;
+    let score=matching(p)?100:0;
+    if(ctx.pace==='여유롭게')score+=(4-walk)*7+Math.max(0,120-stay)/20-(m.outside?10:0);
+    if(ctx.pace==='빡빡하게')score+=Math.max(0,150-stay)/8-(m.outside?4:0);
+    const moves=ctx.tourMove||[],weights=moves.map(move=>{
+      if(move==='도보 위주')return (km===null?0:km<=3?20:km<=8?6:-12)+(p.category==='산책'?4:0);
+      if(move==='대중교통')return (km===null?0:Math.max(-10,12-km*.8))-(m.outside?6:0);
+      if(move==='렌터카')return m.outside?18:km===null?0:Math.min(km,12)/2;
+      if(move==='택시')return (km===null?0:km<=15?10:km<=30?3:-5)+(3-walk)*2;
+      return 0;
+    });
+    return score+(weights.length?weights.reduce((a,b)=>a+b,0)/weights.length:0);
+  }
+  function recommendationReason(p){
+    const ctx=context(),m=metaFor(p),km=cityDistance(p),reasons=[];
+    if(matching(p))reasons.push('✓ 관심 테마와 어울려요');
+    if(ctx.pace==='여유롭게'&&m.walk===1)reasons.push('가벼운 걷기 후보');
+    if(ctx.pace==='빡빡하게'&&m.stay<=60)reasons.push('짧게 둘러볼 후보');
+    if(ctx.tourMove?.includes('렌터카')&&m.outside)reasons.push('외곽 드라이브 후보');
+    if(ctx.tourMove?.some(v=>v==='도보 위주'||v==='대중교통')&&km!==null&&km<=3)reasons.push('도심 주변 후보');
+    return reasons.join(' · ')||'도시 대표 여행 후보';
+  }
+  function setMode(value){if(!['young','old'].includes(value))return;mode=value;try{localStorage.setItem('gonsang-tour-mode-v1',mode);}catch(_){}document.dispatchEvent(new CustomEvent('triptrend:change'));}
   const wikiURL=p=>'https://en.wikipedia.org/wiki/'+encodeURIComponent(p.wiki.replaceAll(' ','_'));
   const mapURL=p=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.city+' '+p.name+' '+p.wiki);
   const notify=()=>document.dispatchEvent(new CustomEvent('triptour:change'));
@@ -31,6 +62,7 @@
     #tour-recommendations h3{margin:8px 0;font-size:25px;letter-spacing:-.6px}
     #tour-recommendations .tour-kicker{color:#1d735a;font-size:11px;font-weight:800;letter-spacing:1px}
     #tour-recommendations .tour-sub{font-size:13px;color:#707b74;line-height:1.7;margin:0 0 16px}
+    #tour-recommendations .tour-applied{padding:10px 12px;background:#f2f7f3;border-radius:10px;font-size:12px;color:#476653;line-height:1.7;margin:12px 0}
     #tour-recommendations .tour-tools{display:flex;gap:7px;flex-wrap:wrap;margin:16px 0}
     #tour-recommendations button{font:inherit;cursor:pointer}
     #tour-recommendations .tour-filter{padding:7px 12px;border:1px solid #d9e3dc;border-radius:999px;background:#fff;color:#52665a;font-size:12px;font-weight:700}
@@ -69,18 +101,21 @@
   }
   function render(){
     const city=cityNow(); if(city!==previousCity){category='전체';onlyPicked=false;previousCity=city;imageStatus='idle';}
+    const preferences=JSON.stringify([context().tourThemes||[],context().pace||'보통',context().tourMove||[]]);
+    if(preferences!==previousPreferences){category='전체';onlyPicked=false;previousPreferences=preferences;}
     const places=ownPlaces(), selected=ownCandidates().filter(isPicked);
     const gifts=ownGifts().filter(p=>!onlyPicked||isPicked(p));
-    const filtered=places.filter(p=>(category==='전체'||p.category===category)&&(!onlyPicked||isPicked(p))).sort((a,b)=>Number(matching(b))-Number(matching(a))||a.order-b.order);
+    const ranked=places.filter(p=>(category==='전체'||p.category===category)&&(!onlyPicked||isPicked(p))).sort((a,b)=>preferenceScore(b)-preferenceScore(a)||a.order-b.order);
+    const filtered=onlyPicked?ranked:ranked.slice(0,10),ctx=context();
     const categories=['전체',...new Set(places.map(p=>p.category))];
-    root.innerHTML=`<span class="tour-kicker">GONSANG PICKS · 도시별 대표 장소</span><h3>${city?e(city)+' 추천 관광지':'어디로 떠나볼까요?'}${places.length?' TOP '+places.length:''}</h3>
-      <p class="tour-sub">${places.length?'대표 장소를 수동 선정하고 선택한 여행 테마와 맞는 곳을 먼저 보여드려요. 실제 인기 순위나 평점이 아닙니다.':'상단에서 여행지를 선택하면 사진과 함께 추천 장소를 살펴볼 수 있어요.'}</p>
-      ${places.length?`<div class="tour-tools" role="group" aria-label="여행 코스 모드"><button class="tour-filter" data-tour-mode="young" type="button" aria-pressed="${mode==='young'}">🧃 영크크 · 활기찬 코스</button><button class="tour-filter" data-tour-mode="old" type="button" aria-pressed="${mode==='old'}">🍵 늙크크 · 쉬어가는 코스</button></div><div class="tour-tools" role="group" aria-label="관광지 분류">${categories.map(c=>`<button class="tour-filter" type="button" data-category="${e(c)}" aria-pressed="${c===category}">${e(c)}</button>`).join('')}<button class="tour-filter" type="button" data-picked-only aria-pressed="${onlyPicked}">♥ 담은 곳 ${selected.length}</button></div>`:''}
+    root.innerHTML=`<span class="tour-kicker">GONSANG PICKS · 도시별 대표 장소</span><h3>${city?e(city)+' 추천 관광지':'어디로 떠나볼까요?'}${places.length?' TOP 10':''}</h3>
+      <p class="tour-sub">${places.length?'위 관광 조건의 관심 테마·여행 속도·이동 수단에 맞춰 추천 장소와 순서를 바꿔요. 실제 인기 순위나 평점이 아닙니다.':'상단에서 여행지를 선택하면 사진과 함께 추천 장소를 살펴볼 수 있어요.'}</p>
+      ${places.length?`<div class="tour-applied" aria-live="polite">적용 조건: ${e((ctx.tourThemes||[]).join(', ')||'모든 테마')} · ${e(ctx.pace||'보통')} · ${e((ctx.tourMove||[]).join(', ')||'이동 수단 무관')}<br>대표 후보 ${places.length}곳 중 최대 10곳 추천 · 현재 ${filtered.length}곳 표시</div><div class="tour-tools" role="group" aria-label="관광지 분류">${categories.map(c=>`<button class="tour-filter" type="button" data-category="${e(c)}" aria-pressed="${c===category}">${e(c)}</button>`).join('')}<button class="tour-filter" type="button" data-picked-only aria-pressed="${onlyPicked}">♥ 담은 곳 ${selected.length}</button></div>`:''}
       ${selected.length?`<div class="tour-tray"><b>내 일정에 담은 곳 ${selected.length}개</b><br>${selected.map(p=>e(p.name)).join(' · ')}<br>하단 ‘저장하고 최종 일정 보기’에서 함께 확인하세요.</div>`:''}
-      <div class="tour-list">${filtered.map((p,i)=>`<article class="tour-card"><span class="tour-rank">${i+1}</span><div><a class="tour-name" href="${wikiURL(p)}" target="_blank" rel="noopener noreferrer">${e(p.name)}</a><p class="tour-desc">${e(p.description)}</p><span class="tour-meta">${e(p.category)} · ${e(city)} 및 인근</span><span class="tour-reason">${matching(p)?'✓ 선택한 여행 테마와 어울려요':'도시 대표 여행 후보'}</span>${feeHTML(p)}<div class="tour-actions"><button class="tour-pick" type="button" data-pick="${e(p.id)}" aria-pressed="${isPicked(p)}">${isPicked(p)?'♥ 담음 · 취소':'♡ 내 일정에 담기'}</button><a class="tour-map" href="${mapURL(p)}" target="_blank" rel="noopener noreferrer">지도 보기 ↗</a></div></div><figure class="tour-photo" data-photo="${e(p.wiki)}">${photoHTML(p)}</figure></article>`).join('')}</div>
+      <div class="tour-list">${filtered.map((p,i)=>`<article class="tour-card"><span class="tour-rank">${i+1}</span><div><a class="tour-name" href="${wikiURL(p)}" target="_blank" rel="noopener noreferrer">${e(p.name)}</a><p class="tour-desc">${e(p.description)}</p><span class="tour-meta">${e(p.category)} · ${e(city)} 및 인근</span><span class="tour-reason">${e(recommendationReason(p))}</span>${feeHTML(p)}<div class="tour-actions"><button class="tour-pick" type="button" data-pick="${e(p.id)}" aria-pressed="${isPicked(p)}">${isPicked(p)?'♥ 담음 · 취소':'♡ 내 일정에 담기'}</button><a class="tour-map" href="${mapURL(p)}" target="_blank" rel="noopener noreferrer">지도 보기 ↗</a></div></div><figure class="tour-photo" data-photo="${e(p.wiki)}">${photoHTML(p)}</figure></article>`).join('')}</div>
       ${!filtered.length&&!gifts.length?`<div class="tour-empty">${!city?'여행지를 먼저 선택해 주세요.':!places.length?'이 도시의 추천 장소를 준비 중이에요. 직접 검색한 여행지일 수 있어요.':'선택한 분류에 해당하거나 일정에 담은 장소가 없어요.'}</div>`:''}
       ${gifts.length?`<section class="tour-gifts"><b>🛍 함께 살펴볼 기념품 후보</b><p>담지 않은 기념품은 코스의 쇼핑 구역에 메모로 붙이고, 직접 담으면 별도 쇼핑 슬롯으로 계획해요. 실제 구매 매장은 직접 정해야 합니다.</p>${gifts.map(p=>`<button type="button" class="tour-pick" data-pick="${e(p.id)}" aria-pressed="${isPicked(p)}">${isPicked(p)?'♥':'♡'} ${e(p.name)}</button>`).join('')}</section>`:''}
-      ${places.length?'<p class="tour-photo-note" role="status" data-photo-status>사진은 무료 Wikimedia 자료에서 출처·라이선스를 확인해 불러옵니다. 이미지가 없거나 연결되지 않으면 자리 표시가 나옵니다. 장소별 방문 가능 여부·운영시간·입장료는 공식 사이트에서 확인하세요.</p><button class="tour-filter" type="button" data-photo-retry>사진 다시 불러오기</button>':''}`;
+      ${places.length?'<p class="tour-photo-note">추천에는 걷기·관람 시간의 편집 참고값과 도심에서의 직선거리를 사용해요. 실제 대중교통 접근성이나 경로를 조회한 결과는 아닙니다.</p><p class="tour-photo-note" role="status" data-photo-status>사진은 무료 Wikimedia 자료에서 출처·라이선스를 확인해 불러옵니다. 이미지가 없거나 연결되지 않으면 자리 표시가 나옵니다. 장소별 방문 가능 여부·운영시간·입장료는 공식 사이트에서 확인하세요.</p><button class="tour-filter" type="button" data-photo-retry>사진 다시 불러오기</button>':''}`;
     hydratePhotos();
   }
   function feeHTML(p){
@@ -146,7 +181,6 @@
     else if(b.hasAttribute('data-picked-only')){onlyPicked=!onlyPicked;render();}
     else if(b.dataset.pick && known.has(b.dataset.pick)){const id=b.dataset.pick,p=all.find(p=>p.id===id);if(isPicked(p)){picks.delete(id);window.TripCourse?.remove?.(p.name);}else picks.add(id);store();render();}
     else if(b.hasAttribute('data-photo-retry') && !busy){ownPlaces().forEach(p=>{attempted.delete(p.wiki);photos.delete(p.wiki);});render();}
-    else if(['young','old'].includes(b.dataset.tourMode)){mode=b.dataset.tourMode;try{localStorage.setItem('gonsang-tour-mode-v1',mode);}catch(_){}render();document.dispatchEvent(new CustomEvent('triptrend:change'));}
   });
   root.addEventListener('error',ev=>{
     const img=ev.target;if(img.tagName!=='IMG'||img.dataset.failed)return;
@@ -160,7 +194,7 @@
   });
   window.TripTourPhotos=Object.freeze({get:(city,name)=>{const p=all.find(p=>p.city===city&&p.name===name),photo=p&&photos.get(p.wiki);return photo?{...photo}:null;}});
   // 인계서의 기존 연동 인터페이스와 호환. 추천 모듈의 실제 담기 상태만 읽는다.
-  window.TripTrend=Object.freeze({get:()=>({mode,picks:all.filter(p=>picks.has(p.id)).map(p=>p.city+'|'+p.name)})});
+  window.TripTrend=Object.freeze({get:()=>({mode,picks:all.filter(p=>picks.has(p.id)).map(p=>p.city+'|'+p.name)}),setMode});
   document.addEventListener('triptour:change',()=>document.dispatchEvent(new CustomEvent('triptrend:change')));
   document.addEventListener('tripcontext:change',render);
   document.addEventListener('tripcourse:change',render);
