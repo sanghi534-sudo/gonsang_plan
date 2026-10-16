@@ -125,9 +125,9 @@
 
   const style = document.createElement('style');
   style.textContent = `
-    .sr{position:fixed;inset:0;z-index:100;background:#fff;display:flex;flex-direction:column}
+    .sr{margin-top:28px;padding-top:6px;border-top:2px solid #e6e9e7;background:#fff;display:flex;flex-direction:column}
     .sr[hidden]{display:none}
-    .sr-bar{display:flex;align-items:center;gap:16px;padding:12px 20px;border-bottom:1px solid #ddd;flex:none}
+    .sr-bar{display:flex;align-items:center;gap:16px;padding:12px 0;flex:none}
     .sr-back{padding:9px 14px;border-radius:999px;border:1px solid #ccc;font-weight:700;font-size:14px;background:#fff;cursor:pointer}
     .sr-back:hover{background:#f4f4f4}
     .sr-title{font-size:17px;font-weight:800}
@@ -135,9 +135,9 @@
     .sr-tog{margin-left:auto;display:none;border:1px solid #ccc;border-radius:999px;overflow:hidden}
     .sr-tog button{padding:8px 14px;font-size:13px;font-weight:700;border:0;background:#fff;cursor:pointer}
     .sr-tog button.on{background:#1d735a;color:#fff}
-    .sr-body{flex:1;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);min-height:0}
-    .sr-list{overflow:auto;padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:22px 18px;align-content:start}
-    .sr-map{position:relative;min-height:0;background:#e9ecea}
+    .sr-body{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;height:680px}
+    .sr-list{overflow:auto;padding:4px 6px 20px 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:22px 18px;align-content:start}
+    .sr-map{position:relative;min-height:0;background:#e9ecea;border-radius:16px;overflow:hidden}
     #srMapEl{position:absolute;inset:0}
     .sr-state{grid-column:1/-1;padding:60px 10px;text-align:center;color:#555;font-size:15px;line-height:1.7}
     .sr-spin{width:34px;height:34px;margin:0 auto 14px;border:4px solid #dfe5e2;border-top-color:#1d735a;border-radius:50%;animation:srspin 1s linear infinite}
@@ -161,7 +161,7 @@
     .leaflet-div-icon.sr-ico{background:none;border:0}
     @media (max-width:900px){
       .sr-tog{display:flex}
-      .sr-body{grid-template-columns:1fr}
+      .sr-body{grid-template-columns:1fr;height:560px}
       .sr-body[data-v="list"] .sr-map{display:none}
       .sr-body[data-v="map"] .sr-list{display:none}
     }
@@ -172,10 +172,10 @@
     if (overlay) return overlay;
     overlay = document.createElement('div');
     overlay.className = 'sr'; overlay.hidden = true;
-    overlay.setAttribute('role', 'dialog'); overlay.setAttribute('aria-label', '숙소 검색 결과');
+    overlay.setAttribute('aria-label', '숙소 검색 결과');
     overlay.innerHTML = `
       <header class="sr-bar">
-        <button class="sr-back" type="button" id="srBack">← 조건 수정</button>
+        <button class="sr-back" type="button" id="srBack">결과 닫기 ✕</button>
         <div><div class="sr-title" id="srTitle"></div><span class="sr-note" id="srNote"></span></div>
         <div class="sr-tog" id="srTog"><button type="button" data-v="list" class="on">목록</button><button type="button" data-v="map">지도</button></div>
       </header>
@@ -183,7 +183,7 @@
         <section class="sr-list" id="srList"></section>
         <div class="sr-map"><div id="srMapEl"></div></div>
       </div>`;
-    document.body.appendChild(overlay);
+    pane.appendChild(overlay);   // 항공 탭처럼 현재 화면의 숙소 탭 하단에 표시
     overlay.querySelector('#srBack').addEventListener('click', closeResults);
     overlay.querySelector('#srTog').addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
@@ -191,11 +191,13 @@
       overlay.querySelector('#srBody').dataset.v = b.dataset.v;
       if (map) setTimeout(() => map.invalidateSize(), 50);
     });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !overlay.hidden) closeResults(); });
     return overlay;
   }
-  function openResults() { ensureOverlay().hidden = false; document.body.style.overflow = 'hidden'; }
-  function closeResults() { overlay.hidden = true; document.body.style.overflow = ''; }
+  function openResults() {
+    const o = ensureOverlay(); o.hidden = false;
+    o.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function closeResults() { overlay.hidden = true; }
   const $o = s => overlay.querySelector(s);
 
   function showState(html) { $o('#srList').innerHTML = `<div class="sr-state">${html}</div>`; }

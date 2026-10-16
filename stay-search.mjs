@@ -1,8 +1,9 @@
-// 숙소 검색: Claude API(웹 검색 도구)로 숙소 후보를 찾아 지도에 표시할 수 있는 JSON 으로 돌려준다.
-// API 키는 서버(.env 의 ANTHROPIC_API_KEY)에서만 사용한다. 키가 없으면 샘플 데이터로 화면만 확인할 수 있다.
+// 숙소 검색: LLM API(웹 검색 도구, OpenAI 또는 Claude)로 숙소 후보를 찾아 지도에 표시할 수 있는 JSON 으로 돌려준다.
+// API 키는 서버(.env 의 OPENAI_API_KEY 또는 ANTHROPIC_API_KEY)에서만 사용한다. 키가 없으면 샘플 데이터로 화면만 확인할 수 있다.
 import Anthropic from '@anthropic-ai/sdk';
 
-const MODEL = process.env.STAY_SEARCH_MODEL || 'claude-opus-5-5';
+const MODEL = process.env.STAY_SEARCH_MODEL || 'claude-opus-5-5';        // Anthropic 사용 시
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4.1-mini';        // OpenAI 사용 시
 const MAX_STAYS = 12;
 const MAX_RESUMES = 3;
 
@@ -112,15 +113,43 @@ export function validateQuery(q) {
   return null;
 }
 
-export async function searchStays(q) {
-  q.dest = q.dest.trim();
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return { source: 'sample', note: 'ANTHROPIC_API_KEY 가 없어 샘플 데이터를 표시합니다. .env 에 키를 넣으면 AI 웹 검색 결과로 채워집니다.', ...sample(q) };
+// 어떤 제공자를 쓸지: STAY_SEARCH_PROVIDER 로 강제하거나, 키가 있는 쪽을 자동 선택한다.
+function pickProvider() {
+  const forced = (process.env.STAY_SEARCH_PROVIDER || '').toLowerCase();
+  if (forced === 'openai' && process.env.OPENAI_API_KEY) return 'openai';
+  if (forced === 'anthropic' && process.env.ANTHROPIC_API_KEY) return 'anthropic';
+  if (process.env.OPENAI_API_KEY) return 'openai';
+  if (process.env.ANTHROPIC_API_KEY) return 'anthropic';
+  return null;
+}
+
+async function askOpenAI(q) {
+  const res = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${process.env.OPENAI_API_KEY}`, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      model: OPENAI_MODEL, instructions: SYSTEM, input: buildPrompt(q),
+      tools: [{ type: 'web_search' }], max_output_tokens: 16000
+    }),
+    signal: AbortSignal.timeout(170000)
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const e = new Error(res.status === 401 ? 'OpenAI API 키가 올바르지 않습니다. .env 의 OPENAI_API_KEY 를 확인해 주세요.'
+      : res.status === 429 ? 'OpenAI 사용 한도를 초과했어요. 잠시 후 다시 시도해 주세요.'
+      : (data.error && data.error.message) || `OpenAI 요청에 실패했습니다 (${res.status}).`);
+    e.status = res.status === 401 || res.status === 429 ? res.status : 502;
+    throw e;
   }
+  if (typeof data.output_text === 'string' && data.output_text) return { text: data.output_text, model: OPENAI_MODEL };
+  const text = (data.output || []).flatMap(o => o.content || []).filter(c => c.type === 'output_text').map(c => c.text).join('\n');
+  return { text, model: OPENAI_MODEL };
+}
+
+async function askAnthropic(q) {
   const client = new Anthropic();   // ANTHROPIC_API_KEY 는 환경변수에서 읽는다
   const messages = [{ role: 'user', content: buildPrompt(q) }];
   const tools = [{ type: 'web_search_20260209', name: 'web_search', max_uses: 6 }];
-
   let message;
   for (let i = 0; i <= MAX_RESUMES; i++) {
     const stream = client.messages.stream({
@@ -134,7 +163,16 @@ export async function searchStays(q) {
   if (message.stop_reason === 'refusal') {
     const e = new Error('AI가 이 요청에 대한 검색을 거절했습니다. 조건을 바꿔 다시 시도해 주세요.'); e.status = 422; throw e;
   }
-  const text = message.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+  return { text: message.content.filter(b => b.type === 'text').map(b => b.text).join('\n'), model: MODEL };
+}
+
+export async function searchStays(q) {
+  q.dest = q.dest.trim();
+  const provider = pickProvider();
+  if (!provider) {
+    return { source: 'sample', note: 'API 키가 없어 샘플 데이터를 표시합니다. .env 에 OPENAI_API_KEY 또는 ANTHROPIC_API_KEY 를 넣으면 AI 웹 검색 결과로 채워집니다.', ...sample(q) };
+  }
+  const { text, model } = provider === 'openai' ? await askOpenAI(q) : await askAnthropic(q);
   const parsed = extractJson(text);
   if (!parsed) {
     const e = new Error('AI 응답을 해석하지 못했습니다. 잠시 후 다시 검색해 주세요.'); e.status = 502; throw e;
@@ -142,7 +180,7 @@ export async function searchStays(q) {
   const out = sanitize(parsed);
   if (!out.center && CITY[q.dest]) out.center = { lat: CITY[q.dest][0], lng: CITY[q.dest][1] };
   return {
-    source: 'llm', model: MODEL, ...out,
+    source: 'llm', provider, model, ...out,
     note: 'AI가 웹 검색으로 찾은 참고용 결과입니다. 가격·평점·위치는 예약 전에 각 사이트에서 다시 확인해 주세요.'
   };
 }
