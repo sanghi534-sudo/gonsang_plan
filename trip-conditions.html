@@ -219,6 +219,16 @@
   }
   /* FLIGHT DEMO STYLE END */
 
+
+  /* 최종 일정 창 (trip-summary.html 을 iframe 으로 띄움) */
+  .sum-modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:24px}
+  .sum-modal.open{display:flex}
+  .sum-box{position:relative;width:min(1280px,100%);height:100%;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+  .sum-box iframe{width:100%;height:100%;border:0;display:block}
+  .sum-x{position:absolute;top:12px;right:14px;z-index:1;width:38px;height:38px;border-radius:50%;background:#fff;border:1px solid var(--line);font-size:16px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .sum-x:hover{border-color:var(--teal-d);color:var(--teal-d)}
+  @media (max-width:760px){.sum-modal{padding:0}.sum-box{border-radius:0}}
+
   @media (max-width:760px){
     .search{flex-direction:column;border-radius:24px;height:auto}
     .seg{padding:12px 20px;border-radius:24px}
@@ -441,11 +451,14 @@
       <h3>선택한 조건</h3>
       <dl id="summary"></dl>
     </section>
-    <button class="save" id="saveBtn" type="button">조건 저장하기</button>
+    <button class="save" id="saveBtn" type="button">저장하고 최종 일정 보기</button>
   </aside>
 </main>
 
 <div class="toast" id="toast"></div>
+<div class="sum-modal" id="sumModal" role="dialog" aria-modal="true" aria-label="여행 최종 일정">
+  <div class="sum-box"><button class="sum-x" id="sumClose" type="button" aria-label="닫기">✕</button><iframe id="sumFrame" title="여행 최종 일정"></iframe></div>
+</div>
 
 <script src="budget.js"></script>
 <script src="travel-trends-data.js"></script>
@@ -1007,12 +1020,24 @@
     guests: { ...state.guests }
   });
   const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  $('#saveBtn').addEventListener('click', () => {
-    const data = { dest: state.dest, start: state.start && state.start.toISOString().slice(0, 10),
-      end: state.end && state.end.toISOString().slice(0, 10), guests: state.guests, flight: air, budget: window.TripBudget ? window.TripBudget.get() : null, stay: window.StayFilter ? window.StayFilter.get() : null, options: state.opts };
+  const saveConditions = () => {
+    const data = { dest: state.dest, start: state.start && ymd(state.start),
+      end: state.end && ymd(state.end), guests: state.guests, flight: air, budget: window.TripBudget ? window.TripBudget.get() : null, stay: window.StayFilter ? window.StayFilter.get() : null, options: state.opts };
     try { localStorage.setItem('gonsang-trip-conditions', JSON.stringify(data)); } catch (_) {}
-    console.log('trip conditions', data);
-    toast('여행 조건을 저장했어요');
+  };
+  // 최종 일정 창: 저장한 조건을 trip-summary.html 이 읽어 일정·경비·체크리스트로 보여 준다
+  const sumModal = $('#sumModal'), sumFrame = $('#sumFrame');
+  const closeSummary = () => { sumModal.classList.remove('open'); sumFrame.removeAttribute('src'); };
+  $('#saveBtn').addEventListener('click', () => {
+    saveConditions();
+    sumFrame.src = 'trip-summary.html';
+    sumModal.classList.add('open');
+  });
+  $('#sumClose').addEventListener('click', closeSummary);
+  sumModal.addEventListener('click', e => { if (e.target === sumModal) closeSummary(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && sumModal.classList.contains('open')) closeSummary(); });
+  window.addEventListener('message', e => {
+    if (e.origin === location.origin && e.data && e.data.type === 'trip-summary:close') closeSummary();
   });
 
   renderCal(); renderGuest(); renderAll();
