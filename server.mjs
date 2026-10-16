@@ -102,6 +102,8 @@ async function searchFlights(url, res) {
 const STATIC = {
   '/trip-conditions.html': ['trip-conditions.html', 'text/html; charset=utf-8'],
   '/favicon.svg': ['favicon.svg', 'image/svg+xml'],
+  '/assets/brand/gonsang-plan-logo.png': ['assets/brand/gonsang-plan-logo.png', 'image/png'],
+  '/assets/brand/gonsang-plan-icon.png': ['assets/brand/gonsang-plan-icon.png', 'image/png'],
   '/trip-summary.html': ['trip-summary.html', 'text/html; charset=utf-8'],
   '/budget.js': ['budget.js', 'text/javascript; charset=utf-8'],
   '/flight-budget.js': ['flight-budget.js', 'text/javascript; charset=utf-8'],

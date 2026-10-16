@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>곤상플랜</title>
-<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/brand/gonsang-plan-icon.png" type="image/png">
 <style>
   :root{
     --bg:#fff; --ink:#222; --sub:#717171; --line:#ddd; --soft:#f7f7f7; --soft2:#ebebeb;
@@ -19,7 +19,8 @@
   /* ===== 상단: Airbnb 스타일 ===== */
   .top{background:#fff;border-bottom:1px solid var(--line);padding:20px 16px 28px;position:relative}
   .top-head{max-width:1100px;margin:0 auto 18px;display:flex;align-items:center;justify-content:space-between}
-  .logo{font-weight:800;color:var(--pink);font-size:22px;letter-spacing:-.5px}
+  .logo{display:inline-flex;align-items:center;flex-shrink:0}
+  .brand-logo{display:block;width:210px;height:70px;object-fit:contain}
   .search-wrap{max-width:860px;margin:0 auto;position:relative}
   .search{display:flex;align-items:stretch;background:var(--soft2);border:1px solid var(--line);border-radius:999px;height:68px}
   .search.active{background:var(--soft2)}
@@ -231,6 +232,7 @@
   @media (max-width:760px){.sum-modal{padding:0}.sum-box{border-radius:0}}
 
   @media (max-width:760px){
+    .brand-logo{width:174px;height:58px}
     .search{flex-direction:column;border-radius:24px;height:auto}
     .seg{padding:12px 20px;border-radius:24px}
     .go{margin:8px;padding:14px;justify-content:center}
@@ -252,7 +254,7 @@
 
 <!-- ============ 상단 (5/1) : 여행지 · 날짜 · 여행자 ============ -->
 <header class="top">
-  <div class="top-head"><span class="logo">곤상플랜</span></div>
+  <div class="top-head"><span class="logo"><img class="brand-logo" src="assets/brand/gonsang-plan-logo.png" alt="곤상플랜" width="210" height="70"></span></div>
   <div class="search-wrap" id="searchWrap">
     <div class="search">
       <button class="seg" id="s-dest" type="button">
